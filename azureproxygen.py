@@ -10,9 +10,8 @@ from haikunator import Haikunator
 import proxytester
 
 class AzureProxyGen:
-    network_client = None
     compute_client = None
-
+    network_client = None
     def __init__(self):
         self.network_client = NetworkManagementClient(self.get_credentials(), self.get_subscription())
         self.compute_client = ComputeManagementClient(self.get_credentials(), self.get_subscription())
@@ -43,10 +42,12 @@ class AzureProxyGen:
 
     def get_subnet_info(self, group_name, vnet_name, subnet_name):
         subnet_info = self.network_client.subnets.get(group_name, 'proxyvnet', 'proxysubnet')
+
         return subnet_info
 
     def get_security_group_info(self, group_name, security_group_name):
         security_group_info = self.network_client.network_security_groups.get(group_name, 'proxy-ports')
+
         return security_group_info
 
     def create_public_ip(self, group_name, ip_location, ip_name):
@@ -118,18 +119,18 @@ def main():
     name_generator = Haikunator()
 
     # azure objects
-    ProxyGen = AzureProxyGen()
+    proxy_gen = AzureProxyGen()
 
     LOCATION = 'eastus'
     GROUP_NAME = 'proxies'
     VNET_NAME = 'proxyvnet'
     SUBNET_NAME = 'proxysubnet'
     SECURITY_GROUP_NAME = 'proxy-ports'
-    STARTUP_SCRIPT = AzureProxyGen.read_startup_script("proxystartupscript.txt")
+    STARTUP_SCRIPT = proxy_gen.read_startup_script("proxystartupscript.txt")
 
     # one time networking variables
-    subnet = AzureProxyGen.get_subnet_info(GROUP_NAME, VNET_NAME, SUBNET_NAME)
-    security_group = AzureProxyGen.get_security_group_info(GROUP_NAME, SECURITY_GROUP_NAME)
+    security_group = proxy_gen.get_security_group_info(GROUP_NAME, SECURITY_GROUP_NAME)
+    subnet = proxy_gen.get_subnet_info(GROUP_NAME, VNET_NAME, SUBNET_NAME)
     
     # ask user for inputs
     proxy_count = int(input("How many proxies would you like to be created? "))
@@ -141,12 +142,12 @@ def main():
     for x in range(proxy_count):   
         # vm specifc variables
         vm_name = name_generator.haikunate()
-        public_ip = AzureProxyGen.create_public_ip(GROUP_NAME, LOCATION, vm_name + "-ip")
-        nic = AzureProxyGen.create_nic(GROUP_NAME, vm_name + "-nic", LOCATION, public_ip, subnet, security_group)
+        public_ip = proxy_gen.create_public_ip(GROUP_NAME, LOCATION, vm_name + "-ip")
+        nic = proxy_gen.create_nic(GROUP_NAME, vm_name + "-nic", LOCATION, public_ip, subnet, security_group)
 
         # create vm
-        AzureProxyGen.create_vm(GROUP_NAME, LOCATION, vm_name, name_generator.haikunate(), STARTUP_SCRIPT, nic)
-        proxy_list.append(AzureProxyGen.get_vm_ip_address(GROUP_NAME, vm_name + "-ip"))
+        proxy_gen.create_vm(GROUP_NAME, LOCATION, vm_name, name_generator.haikunate(), STARTUP_SCRIPT, nic)
+        proxy_list.append(proxy_gen.get_vm_ip_address(GROUP_NAME, vm_name + "-ip"))
         print("finished creating proxy #" + str(x + 1))
 
     # test proxies
