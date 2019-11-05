@@ -12,10 +12,52 @@ import proxytester
 class AzureProxyGen:
     compute_client = None
     network_client = None
+    resource_client = None
+
     def __init__(self):
         self.network_client = NetworkManagementClient(self.get_credentials(), self.get_subscription())
         self.compute_client = ComputeManagementClient(self.get_credentials(), self.get_subscription())
+        self.resource_client = ResourceManagementClient(self.get_credentials(), self.get_subscription())
     
+    def create_resource_group(self, location, name):
+        resource_group_params = {'location': location}
+        self.resource_client.resource_groups.create_or_update(name, resource_group_params)
+
+    def create_security_group(self, group_name, location, name):
+       security_rule = {
+           'descriptio': "allows port 80 for http proxies",
+           'protocol': 'Tcp',
+           'source_port_range': '*',
+           'destination_port_range': '80',
+           'source_address_prefix': '*',
+           'priority': 100
+       }
+       security_rules = [security_rule]
+       security_group_params = {
+            'location': location, 
+            'security_rules': security_rules,
+            'default_security_rules': security_rules
+       }
+       self.network_client.security_groups.create_or_update(group_name, name, security_group_params)
+
+    def create_virtual_network(self, group_name, location, name):
+        address_space = {
+            'address_prefixes': '10.0.0.0/20'
+        }
+        vnet_params = {
+            'location': location,
+            'address_space': address_space,
+            'enable_ddos_protection': False,
+            'enable_vm_protection': False
+        }
+        self.network_client.virtual_networks.create_or_update(group_name, name, vnet_params)
+    
+    def create_subnet(self, group_name, name):
+        subnet_params = {
+            'address_prefix': '10.0.0.0/20',
+        }
+        self.network_client.subnets.create_or_update(group_name, name, subnet_params)
+
     def get_vm_ip_address(self, group_name, ip_name):
         public_ip = self.network_client.public_ip_addresses.get(group_name, ip_name)
         while public_ip.ip_address == None:
@@ -41,12 +83,12 @@ class AzureProxyGen:
         return startup_script
 
     def get_subnet_info(self, group_name, vnet_name, subnet_name):
-        subnet_info = self.network_client.subnets.get(group_name, 'proxyvnet', 'proxysubnet')
+        subnet_info = self.network_client.subnets.get(group_name, vnet_name, subnet_name)
 
         return subnet_info
 
     def get_security_group_info(self, group_name, security_group_name):
-        security_group_info = self.network_client.network_security_groups.get(group_name, 'proxy-ports')
+        security_group_info = self.network_client.network_security_groups.get(group_name, security_group_name)
 
         return security_group_info
 
@@ -113,6 +155,45 @@ class AzureProxyGen:
             }
         }
         createVMResponse = self.compute_client.virtual_machines.create_or_update(group_name, vm_name, vm_parameters)
+    
+    def initialize_account(self, location):
+        default_resource_group_name = 'sneaker-tools-proxy-resource-group'
+        self.create_resource_group(location, default_resource_group_name)
+        self.create_virtual_network(default_resource_group_name, location, 'sneaker-tools-proxy-virtual-network')
+        self.create_subnet(default_resource_group_name, 'sneaker-tools-proxy-subnet')
+        self.create_security_group(default_resource_group_name, location, 'sneaker-tools-proxies-security-group')
+
+    def create_proxies(self, proxy_count, location, startup_script_name):
+        self.initialize_account(location) # initialize account to make sure all requirements are satisfied
+        # general purpose objects
+        name_generator = Haikunator()
+        proxy_list = []
+
+        # default required azure resources
+        group_name = 'sneaker-tools-proxy-resource-group'
+        vnet_name = 'sneaker-tools-proxy-virtual-network'
+        subnet_name = 'sneaker-tools-proxy-subnet'
+        security_group_name = 'sneaker-tools-proxies-security-group'
+        
+        # get startup script
+        startup_script = self.read_startup_script('proxystartupscript.txt')
+        
+        # one time networking variables
+        security_group = self.get_security_group_info(group_name, security_group_name)
+        subnet = self.get_subnet_info(group_name, vnet_name, subnet_name)
+        
+        for x in range(proxy_count):   
+            # vm specifc variables
+            vm_name = name_generator.haikunate()
+            public_ip = self.create_public_ip(group_name, location, vm_name + "-ip")
+            nic = self.create_nic(group_name, vm_name + "-nic", location, public_ip, subnet, security_group)
+
+            # create vm
+            self.create_vm(group_name, location, vm_name, name_generator.haikunate(), startup_script, nic)
+            proxy_list.append(self.get_vm_ip_address(group_name, vm_name + "-ip") + ":80:pwbo:pwbo")
+            print("finished creating proxy #" + str(x + 1))
+
+        return proxy_list
 
 def main():
     # general purpose objects
