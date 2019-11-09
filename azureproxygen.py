@@ -24,39 +24,38 @@ class AzureProxyGen:
         self.resource_client.resource_groups.create_or_update(name, resource_group_params)
 
     def create_security_group(self, group_name, location, name):
-       security_rule = {
-           'descriptio': "allows port 80 for http proxies",
-           'protocol': 'Tcp',
-           'source_port_range': '*',
-           'destination_port_range': '80',
-           'source_address_prefix': '*',
-           'priority': 100
-       }
-       security_rules = [security_rule]
-       security_group_params = {
+        security_rule = {
+            'name': 'http-port-access',
+            'description': "allows port 80 for http proxies",
+            'protocol': 'Tcp',
+            'source_port_range': '*',
+            'destination_port_range': '80',
+            'source_address_prefix': '*',
+            'destination_address_prefix': '*',
+            'access': 'Allow',
+            'priority': 100,
+            'direction': 'Inbound'
+        }
+        security_group_params = {
             'location': location, 
-            'security_rules': security_rules,
-            'default_security_rules': security_rules
-       }
-       self.network_client.security_groups.create_or_update(group_name, name, security_group_params)
+            'security_rules': [security_rule]
+        }
+        self.network_client.network_security_groups.create_or_update(group_name, name, security_group_params)
 
     def create_virtual_network(self, group_name, location, name):
-        address_space = {
-            'address_prefixes': '10.0.0.0/20'
-        }
         vnet_params = {
             'location': location,
-            'address_space': address_space,
-            'enable_ddos_protection': False,
-            'enable_vm_protection': False
+            'address_space': {
+                'address_prefixes': ['10.0.0.0/20']
+            }
         }
         self.network_client.virtual_networks.create_or_update(group_name, name, vnet_params)
     
-    def create_subnet(self, group_name, name):
+    def create_subnet(self, group_name, vnet_name, name):
         subnet_params = {
-            'address_prefix': '10.0.0.0/20',
+            'address_prefix': '10.0.0.0/20'
         }
-        self.network_client.subnets.create_or_update(group_name, name, subnet_params)
+        self.network_client.subnets.create_or_update(group_name, vnet_name, name, subnet_params)
 
     def get_vm_ip_address(self, group_name, ip_name):
         public_ip = self.network_client.public_ip_addresses.get(group_name, ip_name)
@@ -160,14 +159,14 @@ class AzureProxyGen:
         default_resource_group_name = 'sneaker-tools-proxy-resource-group'
         self.create_resource_group(location, default_resource_group_name)
         self.create_virtual_network(default_resource_group_name, location, 'sneaker-tools-proxy-virtual-network')
-        self.create_subnet(default_resource_group_name, 'sneaker-tools-proxy-subnet')
+        self.create_subnet(default_resource_group_name, 'sneaker-tools-proxy-virtual-network', 'sneaker-tools-proxy-subnet')
         self.create_security_group(default_resource_group_name, location, 'sneaker-tools-proxies-security-group')
 
     def create_proxies(self, proxy_count, location, startup_script_name):
         self.initialize_account(location) # initialize account to make sure all requirements are satisfied
         # general purpose objects
         name_generator = Haikunator()
-        proxy_list = []
+        ip_list = []
 
         # default required azure resources
         group_name = 'sneaker-tools-proxy-resource-group'
@@ -176,7 +175,7 @@ class AzureProxyGen:
         security_group_name = 'sneaker-tools-proxies-security-group'
         
         # get startup script
-        startup_script = self.read_startup_script('proxystartupscript.txt')
+        startup_script = self.read_startup_script(startup_script_name)
         
         # one time networking variables
         security_group = self.get_security_group_info(group_name, security_group_name)
@@ -190,7 +189,7 @@ class AzureProxyGen:
 
             # create vm
             self.create_vm(group_name, location, vm_name, name_generator.haikunate(), startup_script, nic)
-            proxy_list.append(self.get_vm_ip_address(group_name, vm_name + "-ip") + ":80:pwbo:pwbo")
+            ip_list.append(self.get_vm_ip_address(group_name, vm_name + "-ip"))
             print("finished creating proxy #" + str(x + 1))
 
         return proxy_list
@@ -203,40 +202,20 @@ def main():
     proxy_gen = AzureProxyGen()
 
     LOCATION = 'eastus'
-    GROUP_NAME = 'proxies'
-    VNET_NAME = 'proxyvnet'
-    SUBNET_NAME = 'proxysubnet'
-    SECURITY_GROUP_NAME = 'proxy-ports'
-    STARTUP_SCRIPT = proxy_gen.read_startup_script("proxystartupscript.txt")
 
-    # one time networking variables
-    security_group = proxy_gen.get_security_group_info(GROUP_NAME, SECURITY_GROUP_NAME)
-    subnet = proxy_gen.get_subnet_info(GROUP_NAME, VNET_NAME, SUBNET_NAME)
-    
     # ask user for inputs
     proxy_count = int(input("How many proxies would you like to be created? "))
     print("Now creating " + str(proxy_count) + " proxies")
 
+    ip_list = proxy_gen.create_proxies(proxy_count, LOCATION, 'proxystartupscript.txt')
     proxy_list = []
 
-    # create proxies
-    for x in range(proxy_count):   
-        # vm specifc variables
-        vm_name = name_generator.haikunate()
-        public_ip = proxy_gen.create_public_ip(GROUP_NAME, LOCATION, vm_name + "-ip")
-        nic = proxy_gen.create_nic(GROUP_NAME, vm_name + "-nic", LOCATION, public_ip, subnet, security_group)
-
-        # create vm
-        proxy_gen.create_vm(GROUP_NAME, LOCATION, vm_name, name_generator.haikunate(), STARTUP_SCRIPT, nic)
-        proxy_list.append(proxy_gen.get_vm_ip_address(GROUP_NAME, vm_name + "-ip"))
-        print("finished creating proxy #" + str(x + 1))
-
     # test proxies
-    for x in range(len(proxy_list)):
-        while proxytester.test_proxy(proxy_list[x], "pwbo", "pwbo", "80") == False:
-            print(proxy_list[x] + " not yet ready. waiting 5 seconds before testing again")
+    for x in range(len(ip_list)):
+        while proxytester.test_proxy(ip_list[x], "pwbo", "pwbo", "80") == False:
+            print(ip_list[x] + " not yet ready. waiting 5 seconds before testing again")
             time.sleep(5)
-        proxy_list[x] += ":80:pwbo:pwbo"
+        proxy_list.append(ip_list[x] + ":80:pwbo:pwbo")
     print("All proxies ready.")
     print('\n'.join(map(str, proxy_list)))
 
