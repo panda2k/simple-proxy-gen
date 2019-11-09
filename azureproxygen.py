@@ -72,13 +72,16 @@ class AzureProxyGen:
         subscription_id = os.environ.get('AZURE_SUBSCRIPTION_ID')
         return subscription_id
 
-    def read_startup_script(self, file_name):
+    def get_startup_script(self, file_name, proxy_username_identifier, proxy_password_identifier, proxy_username, proxy_password):
         startup_script_file = open(file_name, "r")
         startup_script = startup_script_file.read()
         startup_script_file.close()
+        startup_script = startup_script.replace(proxy_username_identifier, proxy_username)
+        startup_script = startup_script.replace(proxy_password_identifier, proxy_password)
         startup_script = startup_script.encode()
         startup_script = base64.b64encode(startup_script, altchars=None)
         startup_script = startup_script.decode("utf-8")
+
         return startup_script
 
     def get_subnet_info(self, group_name, vnet_name, subnet_name):
@@ -136,6 +139,7 @@ class AzureProxyGen:
                     'version': 'latest'
                 },
                 'os_disk': {
+                    'name': vm_name + "_os_disk",
                     'caching': 'None',
                     'create_option': 'FromImage',
                     'disk_size_gb': 30,
@@ -162,8 +166,9 @@ class AzureProxyGen:
         self.create_subnet(default_resource_group_name, 'sneaker-tools-proxy-virtual-network', 'sneaker-tools-proxy-subnet')
         self.create_security_group(default_resource_group_name, location, 'sneaker-tools-proxies-security-group')
 
-    def create_proxies(self, proxy_count, location, startup_script_name):
-        self.initialize_account(location) # initialize account to make sure all requirements are satisfied
+    def create_proxies(self, proxy_count, location, startup_script_name, first_time_setup):
+        if(first_time_setup):
+            self.initialize_account(location) # initialize account to make sure all requirements are satisfied
         # general purpose objects
         name_generator = Haikunator()
         ip_list = []
@@ -175,7 +180,7 @@ class AzureProxyGen:
         security_group_name = 'sneaker-tools-proxies-security-group'
         
         # get startup script
-        startup_script = self.read_startup_script(startup_script_name)
+        startup_script = self.get_startup_script(startup_script_name, 'username', 'password', 'testuser', 'testpassword')
         
         # one time networking variables
         security_group = self.get_security_group_info(group_name, security_group_name)
@@ -192,7 +197,7 @@ class AzureProxyGen:
             ip_list.append(self.get_vm_ip_address(group_name, vm_name + "-ip"))
             print("finished creating proxy #" + str(x + 1))
 
-        return proxy_list
+        return ip_list
 
 def main():
     # general purpose objects
@@ -207,15 +212,15 @@ def main():
     proxy_count = int(input("How many proxies would you like to be created? "))
     print("Now creating " + str(proxy_count) + " proxies")
 
-    ip_list = proxy_gen.create_proxies(proxy_count, LOCATION, 'proxystartupscript.txt')
+    ip_list = proxy_gen.create_proxies(proxy_count, LOCATION, 'proxystartupscript.txt', False)
     proxy_list = []
 
     # test proxies
     for x in range(len(ip_list)):
-        while proxytester.test_proxy(ip_list[x], "pwbo", "pwbo", "80") == False:
+        while proxytester.test_proxy(ip_list[x], "testuser", "testpassword", "80") == False:
             print(ip_list[x] + " not yet ready. waiting 5 seconds before testing again")
             time.sleep(5)
-        proxy_list.append(ip_list[x] + ":80:pwbo:pwbo")
+        proxy_list.append(ip_list[x] + ":80:testuser:testpassword")
     print("All proxies ready.")
     print('\n'.join(map(str, proxy_list)))
 

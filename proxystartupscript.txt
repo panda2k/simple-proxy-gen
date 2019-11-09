@@ -55,10 +55,10 @@ request_header_access User-Agent allow all
 request_header_access Cookie allow all
 request_header_access All deny all" >> /etc/squid/squid.conf
 
-htpasswd -b -c /etc/squid/squid_passwd pwbo pwbo
+htpasswd -b -c /etc/squid/squid_passwd username password
 
 service squid restart
 
 clear
 change 
-htpasswd -b -c /etc/squid/squid_passwd pwbo pwbo
+htpasswd -b -c /etc/squid/squid_passwd username password
