@@ -166,7 +166,7 @@ class AzureProxyGen:
         self.create_subnet(default_resource_group_name, 'sneaker-tools-proxy-virtual-network', 'sneaker-tools-proxy-subnet')
         self.create_security_group(default_resource_group_name, location, 'sneaker-tools-proxies-security-group')
 
-    def create_proxies(self, proxy_count, location, startup_script_name, first_time_setup):
+    def create_proxies(self, proxy_count, location, startup_script_name, first_time_setup, proxy_username, proxy_password):
         if(first_time_setup):
             self.initialize_account(location) # initialize account to make sure all requirements are satisfied
         # general purpose objects
@@ -180,7 +180,7 @@ class AzureProxyGen:
         security_group_name = 'sneaker-tools-proxies-security-group'
         
         # get startup script
-        startup_script = self.get_startup_script(startup_script_name, 'username', 'password', 'testuser', 'testpassword')
+        startup_script = self.get_startup_script(startup_script_name, 'username', 'password', proxy_username, proxy_password)
         
         # one time networking variables
         security_group = self.get_security_group_info(group_name, security_group_name)
@@ -210,17 +210,19 @@ def main():
 
     # ask user for inputs
     proxy_count = int(input("How many proxies would you like to be created? "))
+    proxy_username = input("What do you want the proxy authentication username to be? ")
+    proxy_password = input("What do you want the proxy authentication password to be? ")
     print("Now creating " + str(proxy_count) + " proxies")
 
-    ip_list = proxy_gen.create_proxies(proxy_count, LOCATION, 'proxystartupscript.txt', False)
+    ip_list = proxy_gen.create_proxies(proxy_count, LOCATION, 'proxystartupscript', False, proxy_username, proxy_password)
     proxy_list = []
 
     # test proxies
     for x in range(len(ip_list)):
-        while proxytester.test_proxy(ip_list[x], "testuser", "testpassword", "80") == False:
+        while proxytester.test_proxy(ip_list[x], proxy_username, proxy_password, "80") == False:
             print(ip_list[x] + " not yet ready. waiting 5 seconds before testing again")
             time.sleep(5)
-        proxy_list.append(ip_list[x] + ":80:testuser:testpassword")
+        proxy_list.append(ip_list[x] + ":80:" + proxy_username + ":" + proxy_password)
     print("All proxies ready.")
     print('\n'.join(map(str, proxy_list)))
 
