@@ -1,0 +1,9 @@
+[Unit]
+Description=Setup squid
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/proxystartupscript
+
+[Install]
+WantedBy=multi-user.target
