@@ -53,4 +53,17 @@ class AzureServer:
             json.dump(server, json_file)
 
 class Server100TB:
-    
+    location_id = None
+    server_id = None
+    label = None
+    username = None
+    password = None
+    ip_address = None
+
+    def __init__(self, location_id, server_id, label, ip_address, username, password):
+        self.location_id = location_id
+        self.server_id = server_id
+        self.label = label
+        self.username = username
+        self.password = password
+        self.ip_address = ip_address
