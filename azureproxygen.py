@@ -8,6 +8,7 @@ from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute import ComputeManagementClient
 from haikunator import Haikunator
 import proxytester
+import proxymodels
 
 class AzureProxyGen:
     compute_client = None
@@ -49,8 +50,8 @@ class AzureProxyGen:
                 'address_prefixes': ['10.0.0.0/20']
             }
         }
-        self.network_client.virtual_networks.create_or_update(group_name, name, vnet_params)
-    
+        self.network_client.virtual_networks.create_or_update(group_name, name, vnet_params)        
+
     def create_subnet(self, group_name, vnet_name, name):
         subnet_params = {
             'address_prefix': '10.0.0.0/20'
@@ -102,7 +103,7 @@ class AzureProxyGen:
         ip_creation_result = self.network_client.public_ip_addresses.create_or_update(group_name, ip_name, public_ip_params)
         public_ip = self.network_client.public_ip_addresses.get(group_name, ip_name)
         return public_ip
-
+    
     def create_nic(self, group_name, nic_name, nic_location, public_ip, subnet_info, security_group_info):
         nic_params = {
             'location': nic_location,
@@ -118,7 +119,7 @@ class AzureProxyGen:
         nic_creation_result = self.network_client.network_interfaces.create_or_update(group_name, nic_name, nic_params)
         nic = self.network_client.network_interfaces.get(group_name, nic_name)
         return nic
-
+    
     def create_vm(self, group_name, vm_location, vm_name, vm_password, startup_script, nic_info):
         vm_parameters = {
             'location': vm_location,
@@ -159,6 +160,12 @@ class AzureProxyGen:
         }
         createVMResponse = self.compute_client.virtual_machines.create_or_update(group_name, vm_name, vm_parameters)
     
+    def delete_vm_completely(self, group_name, disk_name, nic_name, ip_name, vm_name):
+        self.compute_client.virtual_machines.delete(group_name, vm_name)
+        self.compute_client.disks.delete(group_name, disk_name)
+        self.network_client.network_interfaces.delete(group_name, nic_name)
+        self.network_client.public_ip_addresses.delete(group_name, ip_name)
+
     def initialize_account(self, location):
         default_resource_group_name = 'sneaker-tools-proxy-resource-group'
         self.create_resource_group(location, default_resource_group_name)
