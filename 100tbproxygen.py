@@ -16,18 +16,21 @@ class ProxyGen100TB:
 
     def delete_vms(self, servers):
         for x in servers:
-            request_url = f'https://cp.100tb.com/rest-api/vps.json/servers/{x.server_id}'
+            request_url = f'https://cp.100tb.com/rest-api/vps.json/servers/{x.server_id}?api_key={self.api_key}'
             delete_result = requests.delete(request_url)
             print(delete_result)
 
-    def setup_squid(self, servers, startup_script_file_location):
+    def setup_squid(self, servers, startup_script_file_location, squid_service_location):
+        service_name = squid_service_location.replace('.service', '')
         for x in servers:
             sudo_config = Config(overrides={'sudo': {'password': x.password}})
             server_connection = Connection(host=x.ip_address, user=x.username, connect_kwargs={"password": x.password}, config=sudo_config)
+            server_connection.sudo('apt-get install dos2unix')
             file_transfer_result = server_connection.put(startup_script_file_location, remote='/usr/bin/')
             server_connection.sudo('chmod +x /usr/bin/' + startup_script_file_location)
-            file_transfer_result = server_connection.put('squidsetup.service', remote='/etc/systemd/system/')
-            server_connection.sudo('systemctl enable squidsetup')
+            server_connection.sudo('dos2unix /usr/bin/' + startup_script_file_location)
+            file_transfer_result = server_connection.put(squid_service_location, remote='/etc/systemd/system/')
+            server_connection.sudo(f'systemctl enable {service_name}')
             try:
                 server_connection.sudo('reboot')
             except UnexpectedExit as e:
@@ -46,12 +49,12 @@ class ProxyGen100TB:
             'label': vm_name,
             'hostname': vm_name,
             'password': password,
-            'billHourly': True
+            'billHourly': 'true'
         }
         creation_result = json.loads(requests.post(request_url, request_params).text)
         print(creation_result)
 
-        return proxymodels.Server100TB(location_id, creation_result['server'], vm_name, 'root', password)
+        return proxymodels.Server100TB(location_id, creation_result['server'], vm_name, creation_result['ip'], 'root', password)
     
     def get_vm_status(self, vm_id):
         request_url = f'https://cp.100tb.com/rest-api/vps.json/servers/{vm_id}/status/?api_key={self.api_key}'
@@ -59,6 +62,18 @@ class ProxyGen100TB:
 
         return vm_status['status']
 
+    def wait_for_vms(self, servers):
+        ready = False
+        while(ready == False):
+            for x in range(len(servers)):
+                if(self.get_vm_status(servers[x].server_id) != 2):
+                    print('server not ready')
+                    break
+                if(x == len(servers) - 1):
+                    print('servers ready')
+                    ready = True
+            if(ready == False):
+                time.sleep(10)
 
     def get_template_id(self, location_id):
         # gets the ubuntu x64 plan id for the location
@@ -67,6 +82,17 @@ class ProxyGen100TB:
         for x in plans:
             if(x['label'] == 'Ubuntu 16.04 x64'):
                 return x['id']
+    
+    def get_new_squid_setup_service(self, old_script_location, new_location, old_startup_script_identifier, startup_script_name):
+        service = open(old_script_location, 'r')
+        service_script = service.read()
+        service_script = service_script.replace(old_startup_script_identifier, startup_script_name)
+
+        new_service = open(new_location, 'w')
+        new_service.write(service_script)
+
+        new_service.close()
+        service.close()
     
     def get_new_startup_script(self, old_script_location, new_location, proxy_username_identifier, proxy_username, proxy_password_identifier, proxy_password):
         startup_script = open(old_script_location, 'r')
@@ -80,30 +106,28 @@ class ProxyGen100TB:
         new_startup_script.close()
         startup_script.close()
 
-    def create_proxies(self, proxy_count, location_id):
+    def create_proxies(self, proxy_count, location_id, proxy_username, proxy_password):
         proxy_list = []
         servers = []
-        name_generator = haikunator.Haikunator()
-        proxy_username = name_generator.haikunate()
-        proxy_password = name_generator.haikunate()
 
         for x in range(proxy_count):
             servers.append(self.create_vm(location_id))
             proxy_list.append(servers[x].ip_address + f":80:{proxy_username}:{proxy_password}")
-        for x in servers:
-            print(self.get_vm_status(x.server_id))
-        time.sleep(30)
-        for x in servers:
-            print(self.get_vm_status(x.server_id))
+        self.wait_for_vms(servers)
         self.get_new_startup_script('proxystartupscript', 'squidsetupscript', 'username', proxy_username, 'password', proxy_password)
-        self.setup_squid(servers, 'squidsetupscript')
+        self.get_new_squid_setup_service('squidsetup.service', 'proxysetup.service', 'proxystartupscript', 'squidsetupscript')
+        self.setup_squid(servers, 'squidsetupscript', 'proxysetup.service')
 
-        return proxy_list
+        return proxy_list, servers
 
 def main():
+    name_generator = haikunator.Haikunator()
     proxy_gen = ProxyGen100TB(os.environ.get('100TB_API_KEY'))
-    proxy_gen.create_proxies(1, 2)
-
-
+    proxy_count = int(input('How many proxies do you want? '))
+    proxies, servers = proxy_gen.create_proxies(proxy_count, 2, name_generator.haikunate(), name_generator.haikunate())
+    for x in proxies:
+        print(x)
+    input('type anything when ready to delete vms')
+    proxy_gen.delete_vms(servers)
 if __name__ == '__main__':
     main()
