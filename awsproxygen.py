@@ -16,6 +16,13 @@ class AWSProxyGen:
         self.ec2_client = boto3.client('ec2')
         self.ec2_resource = boto3.resource('ec2')
     
+    def cancel_spot_fleet(self, spot_fleet_id):
+        cancel_response = self.ec2_client.cancel_spot_fleet_requests(
+            DryRun=False,
+            SpotFleetRequestIds=[spot_fleet_id],
+            TerminateInstances=True
+        )
+
     def generate_random_string(self, string_length):
         random_string = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(string_length)])
         return random_string
