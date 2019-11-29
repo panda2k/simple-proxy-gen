@@ -2,6 +2,7 @@ import awsproxygen
 import azureproxygen
 import proxymodels
 import os
+import haikunator
 
 def print_intro():
     print("   _____ _      ____  _    _ _____    _____  _____   ______   ____     __   _____ ______ _   _ ")
@@ -11,7 +12,12 @@ def print_intro():
     print(" | |____| |___| |__| | |__| | |__| | | |    | | \ \| |__| / . \    | |    | |__| | |____| |\  |")
     print("  \_____|______\____/ \____/|_____/  |_|    |_|  \_\\\____/_/ \_\   |_|     \_____|______|_| \_|")
 
-def print_options():
+def print_menu_options():
+    print("1. View Proxy Lists")
+    print("2. View Analytics")
+    print("3. Generate Proxies")
+
+def print_proxy_options():
     print("1. Amazon Web Services")
     print("2. Microsoft Azure")
     print("3. 100tb")
@@ -57,11 +63,36 @@ def get_credentials(credentials_list):
             config_file.write("[default]\nregion = us-east-1\noutput = json")
             config_file.close()
 
+def get_user_input(minimum_option, maximum_option):
+    user_input = int(input(f"Which cloud provider would you like to choose? Input a number {minimum_option} - {maximum_option}: "))
+    while(user_input > maximum_option or user_input < minimum_option):
+        user_input = int(input(f"Invalid input. Which cloud provider would you like to choose? Input a number {minimum_option} - {maximum_option}: "))
+    
+    return user_input
+
+def create_proxies(user_option):
+    name_gen = haikunator.Haikunator()
+
+    if(user_option == 1):
+         proxy_gen = awsproxygen.AWSProxyGen()
+         proxy_list_name = input("Proxy list name: ")
+         proxy_count = int(input("How many proxies would you like to generate: "))
+         proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, name_gen.haikunate(), name_gen.haikunate())
+         proxy_list_path = os.path.join(os.path.dirname(os.path.realpath('__file__')), f'proxylists\\{proxy_list_name}.json')
+         for x in proxies:
+            x.write_to_json(proxy_list_path)
+            print(x.to_string())
 
 def main():
     print_intro()
-    get_credentials(check_for_credentials())
-    print_options()
+    print_menu_options()
+    menu_choice = int(input("Input the number corresponding to the menu item you'd like to select: "))
+    if(menu_choice == 3):
+        get_credentials(check_for_credentials())
+        print_proxy_options()
+        user_option = get_user_input(1, 4)
+        create_proxies(user_option)
+
     
 if __name__ == "__main__":
     main()
