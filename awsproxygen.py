@@ -4,6 +4,8 @@ import string
 import time
 import pytz
 import datetime
+import base64
+from botocore.exceptions import ClientError
 
 class AWSProxyGen:
     ec2_client = None
@@ -48,7 +50,34 @@ class AWSProxyGen:
         
         return proxies
 
-    def create_spot_instance_proxies(self, proxy_count, proxy_expiration_time):
+    def get_startup_script(self, startup_script_location, username_identifier, username, password_identifier, password):
+        startup_script_file = open(startup_script_location, "r")
+        startup_script = startup_script_file.read()
+        startup_script = startup_script.replace(username_identifier, username)
+        startup_script = startup_script.replace(password_identifier, password)
+
+        return startup_script
+    
+    def create_security_group(self, security_group_name):
+        vpc_response = self.ec2_client.describe_vpcs()
+        vpc_id = vpc_response['Vpcs'][0]['VpcId']
+        security_group_creation_result = self.ec2_client.create_security_group(GroupName=security_group_name, Description="proxy port 80", VpcId=vpc_id)
+        security_group_id = security_group_creation_result['GroupId']
+        security_group_rules = self.ec2_client.authorize_security_group_ingress(
+            GroupId=security_group_id,
+            IpPermissions=[
+                {
+                    'IpProtocol': 'tcp',
+                    'FromPort': 80,
+                    'ToPort': 80,
+                    'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
+                },
+            ]
+        )
+
+        return security_group_id
+
+    def create_spot_instance_proxies(self, proxy_list_name, proxy_count, startup_script_location, startup_script_username_identifier, proxy_username, startup_script_password_identifier, proxy_password, security_group_id, security_group_name):
         spot_fleet_response = self.ec2_client.request_spot_fleet(
             DryRun=False,
             SpotFleetRequestConfig={
@@ -58,24 +87,33 @@ class AWSProxyGen:
                 'ExcessCapacityTerminationPolicy': 'noTermination',
                 'OnDemandFulfilledCapacity': 0,
                 'IamFleetRole': 'arn:aws:iam::780702615922:role/aws-ec2-spot-fleet-tagging-role',
-                'LaunchTemplateConfigs': [
-                    {
-                        'LaunchTemplateSpecification': {
-                            'LaunchTemplateId': 'lt-07089b53d5d06678f',
-                            'Version': '2'
+                'LaunchSpecifications': [
+                {
+                    'SecurityGroups': [
+                        {
+                            'GroupId': security_group_id
                         },
-                        'Overrides': [
-                            {
-                                'InstanceType': 't3.nano'
-                            },
-                        ]
-                    },
+                    ],
+                    'ImageId': 'ami-04763b3055de4860b',
+                    'InstanceType': 't3.nano',
+                    'UserData': base64.b64encode(self.get_startup_script(startup_script_location, startup_script_username_identifier, proxy_username, startup_script_password_identifier, proxy_password).encode("utf-8")).decode("utf-8"),
+                    'TagSpecifications': [
+                        {
+                            'ResourceType': 'instance',
+                            'Tags': [
+                                {
+                                    'Key': 'list_name',
+                                    'Value': proxy_list_name
+                                },
+                            ]
+                        },
+                    ]
+                },
                 ],
                 'TargetCapacity': proxy_count,
                 'OnDemandTargetCapacity': 0,
                 'TerminateInstancesWithExpiration': True,
                 'Type': 'request',
-                'ValidUntil': proxy_expiration_time,
                 'ReplaceUnhealthyInstances': False,
                 'InstanceInterruptionBehavior': 'terminate',
                 'InstancePoolsToUseCount': 11
@@ -86,17 +124,15 @@ class AWSProxyGen:
     def wait_for_spot_fleet_fulfillment(self, request_id):
         fulfilled = False
         while(fulfilled == False):
-            fleetDescription = self.ec2_client.describe_spot_fleet_requests(
+            fleet_description = self.ec2_client.describe_spot_fleet_requests(
                 DryRun=False,
                 SpotFleetRequestIds=[
                     request_id,
                 ]
             )
-            if(fleetDescription['SpotFleetRequestConfigs'][0]['ActivityStatus'] == 'fulfilled'):
+            if(fleet_description['SpotFleetRequestConfigs'][0]['ActivityStatus'] == 'fulfilled'):
                 fulfilled = True
-                print('Spot fleet ' + request_id + ' is now fulfilled')
             else:
-                print('Spot fleet ' + request_id + ' not yet fulfilled')
                 time.sleep(15)
         return fulfilled
     def get_spot_instance_ip(self, request_id, instance_count):
@@ -119,7 +155,6 @@ class AWSProxyGen:
             )
             for x in range(len(instanceDescription['ActiveInstances'])):
                 instance_id.append(instanceDescription['ActiveInstances'][x]['InstanceId'])
-        print(instance_id)
         for x in range(len(instance_id)):
             instances = self.ec2_client.describe_instances (
                 Filters=[
@@ -138,3 +173,34 @@ class AWSProxyGen:
             ip_list.append(instances['Reservations'][0]['Instances'][0]['PublicIpAddress'])
 
         return ip_list
+
+    def get_security_group_id(self, security_group_name):
+        security_group_response = self.ec2_client.describe_security_groups(GroupNames=[security_group_name])
+        security_group_id = security_group_response['SecurityGroups'][0]['GroupId']
+        
+        return security_group_id
+    
+    def create_proxies(self, proxy_list_name, proxy_count, proxy_username, proxy_password):
+        try:
+            security_group_id = self.create_security_group("simple-sneaker-tools-proxy-security-group")
+        except ClientError as e:
+            security_group_id = self.get_security_group_id("simple-sneaker-tools-proxy-security-group")
+        
+        spot_fleet_id = self.create_spot_instance_proxies(proxy_list_name, proxy_count, 'proxystartupscript', 'username', proxy_username, 'password', proxy_password, security_group_id, "simple-sneaker-tools-proxy-security-group")['SpotFleetRequestId']
+        time.sleep(15)
+        self.wait_for_spot_fleet_fulfillment(spot_fleet_id)
+        ip_list = self.get_spot_instance_ip(spot_fleet_id, proxy_count)
+        for x in range(len(ip_list)):
+            ip_list[x] = ip_list[x] + f":80:{proxy_username}:{proxy_password}"
+        
+        return ip_list
+
+def main():
+    proxy_gen = AWSProxyGen()
+    proxy_count = int(input("How many proxies would you like to create: "))
+    proxy_list_name = input("What do you want to name this proxy list: ")
+    proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, 'testing', 'passtest')
+    print(proxies)
+
+if __name__ == "__main__":
+    main()
