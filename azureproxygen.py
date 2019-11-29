@@ -140,7 +140,7 @@ class AzureProxyGen:
                     'version': 'latest'
                 },
                 'os_disk': {
-                    'name': vm_name + "_os_disk",
+                    'name': vm_name + "-osdisk",
                     'caching': 'None',
                     'create_option': 'FromImage',
                     'disk_size_gb': 30,
@@ -178,7 +178,7 @@ class AzureProxyGen:
             self.initialize_account(location) # initialize account to make sure all requirements are satisfied
         # general purpose objects
         name_generator = Haikunator()
-        ip_list = []
+        server_list = []
 
         # default required azure resources
         group_name = 'sneaker-tools-proxy-resource-group'
@@ -201,10 +201,9 @@ class AzureProxyGen:
 
             # create vm
             self.create_vm(group_name, location, vm_name, name_generator.haikunate(), startup_script, nic)
-            ip_list.append(self.get_vm_ip_address(group_name, vm_name + "-ip"))
-            print("finished creating proxy #" + str(x + 1))
+            server_list.append(proxymodels.AzureServer(self.get_vm_ip_address(group_name, vm_name + "-ip"), proxy_username, proxy_password, 80, vm_name + "-osdisk", vm_name + "-ip", vm_name + "-nic", vm_name, group_name))
 
-        return ip_list
+        return server_list
 
 def main():
     # general purpose objects
