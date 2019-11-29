@@ -124,3 +124,4 @@ dmypy.json
 *.pem
 *.ppk
 googlecloudcredentials.json
+squidsetupscript
