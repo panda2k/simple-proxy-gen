@@ -3,6 +3,7 @@ import azureproxygen
 import proxymodels
 import os
 import haikunator
+import json
 
 def print_intro():
     print("   _____ _      ____  _    _ _____    _____  _____   ______   ____     __   _____ ______ _   _ ")
@@ -74,14 +75,21 @@ def create_proxies(user_option):
     name_gen = haikunator.Haikunator()
 
     if(user_option == 1):
-         proxy_gen = awsproxygen.AWSProxyGen()
-         proxy_list_name = input("Proxy list name: ")
-         proxy_count = int(input("How many proxies would you like to generate: "))
-         proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, name_gen.haikunate(), name_gen.haikunate())
-         proxy_list_path = os.path.join(os.path.dirname(os.path.realpath('__file__')), f'proxylists\\{proxy_list_name}.json')
-         for x in proxies:
-            x.write_to_json(proxy_list_path)
+        proxy_list = []
+        proxy_gen = awsproxygen.AWSProxyGen()
+        proxy_list_name = input("Proxy list name: ")
+        proxy_count = int(input("How many proxies would you like to generate: "))
+        proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, name_gen.haikunate(), name_gen.haikunate())
+        proxy_list_file = open(os.path.join(os.path.dirname(os.path.realpath('__file__')), f'proxylists\\{proxy_list_name}.json'), 'a')
+        print("Here are your generated proxies:")
+        for x in proxies:
+            proxy_list.append(x.to_json())
             print(x.to_string())
+        proxy_list_dict = {
+            'proxies': proxy_list
+        }
+        json.dump(proxy_list_dict, proxy_list_file)
+        proxy_list_file.close()
 
 def main():
     print_intro()
