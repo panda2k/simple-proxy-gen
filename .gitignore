@@ -125,3 +125,4 @@ dmypy.json
 *.ppk
 googlecloudcredentials.json
 squidsetupscript
+proxysetup.service
