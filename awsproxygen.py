@@ -5,6 +5,7 @@ import time
 import pytz
 import datetime
 import base64
+import proxymodels
 from botocore.exceptions import ClientError
 
 class AWSProxyGen:
@@ -181,6 +182,7 @@ class AWSProxyGen:
         return security_group_id
     
     def create_proxies(self, proxy_list_name, proxy_count, proxy_username, proxy_password):
+        proxies = []
         try:
             security_group_id = self.create_security_group("simple-sneaker-tools-proxy-security-group")
         except ClientError as e:
@@ -190,10 +192,10 @@ class AWSProxyGen:
         time.sleep(15)
         self.wait_for_spot_fleet_fulfillment(spot_fleet_id)
         ip_list = self.get_spot_instance_ip(spot_fleet_id, proxy_count)
-        for x in range(len(ip_list)):
-            ip_list[x] = ip_list[x] + f":80:{proxy_username}:{proxy_password}"
+        for x in ip_list:
+            proxies.append(proxymodels.AWSProxy(x, 80, proxy_username, proxy_password, spot_fleet_id))
         
-        return ip_list
+        return proxies
 
 def main():
     proxy_gen = AWSProxyGen()
