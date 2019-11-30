@@ -17,7 +17,7 @@ class AWSProxy:
     def to_string(self):
         return self.ip_address + ':' + str(self.port) + ':' + self.username + ':' + self.password
     
-    def write_to_json(self, file_location):
+    def to_json(self):
         proxy = {
             'spot_fleet_id': self.spot_fleet_id, 
             'ip_address': self.ip_address,
@@ -25,44 +25,47 @@ class AWSProxy:
             'proxy_password': self.password,
             'proxy_port': self.port
         }
-        json_file = open(file_location, 'a')
-        json.dump(proxy, json_file)
-        json_file.close()
+        return proxy
 
 class AzureServer:
     ip_address = None
-    username = None
-    password = None
+    proxy_username = None
+    proxy_password = None
+    proxy_port = None
     disk_name = None
     ip_name = None
     nic_name = None
     vm_name = None
     resource_group_name = None
 
-    def __init__(self, ip_address, username, password, disk_name, ip_name, nic_name, vm_name, resource_group_name):
+    def __init__(self, ip_address, proxy_username, proxy_password, proxy_port, disk_name, ip_name, nic_name, vm_name, resource_group_name):
         self.ip_address = ip_address
-        self.username = username
-        self.password = password
+        self.proxy_username = proxy_username
+        self.proxy_password = proxy_password
+        self.proxy_port = proxy_port
         self.disk_name = disk_name
         self.ip_name = ip_name
         self.nic_name = nic_name
         self.vm_name = vm_name
         self.resource_group_name = resource_group_name
     
-    def write_to_json(self, file_location):
+    def to_json(self):
         server = {
             'vm_name': self.vm_name,
             'resource_group_name': self.resource_group_name,
-            'username': self.username,
-            'password': self.password,
+            'proxy_username': self.proxy_username,
+            'proxy_password': self.proxy_password,
+            'proxy_port': self.proxy_port,
             'ip_address': self.ip_address,
             'ip_name': self.ip_name,
             'nic_name': self.nic_name,
             'disk_name': self.disk_name
         }
-        json_file = open(file_location, 'a')
-        json.dump(server, json_file)
-        json_file.close()
+        return server
+    
+    def to_string(self):
+        return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
+
 
 class Server100TB:
     location_id = None
@@ -71,11 +74,27 @@ class Server100TB:
     username = None
     password = None
     ip_address = None
+    proxy_username = None
+    proxy_password = None
+    proxy_port = None
 
-    def __init__(self, location_id, server_id, label, ip_address, username, password):
+    def __init__(self, location_id, server_id, label, ip_address, username, password, proxy_username, proxy_password, proxy_port):
         self.location_id = location_id
         self.server_id = server_id
         self.label = label
         self.username = username
         self.password = password
         self.ip_address = ip_address
+        self.proxy_password = proxy_password
+        self.proxy_username = proxy_username
+        self.proxy_port = proxy_port
+
+    def to_json(self):
+        server = {
+            'location_id': self.location_id,
+            'server_id': self.server_id,
+            'label': self.label,
+            'username': self.username,
+            'password': self.password,
+            'ip_address': self.ip_address
+        }
