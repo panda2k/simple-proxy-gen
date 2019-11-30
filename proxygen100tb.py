@@ -11,14 +11,12 @@ import proxymodels
 
 class ProxyGen100TB:
     api_key = None
-    def __init__(self, api_key):
-        self.api_key = api_key
+    def __init__(self):
+        self.api_key = os.environ.get('100TB_API_KEY')
 
-    def delete_vms(self, servers):
-        for x in servers:
-            request_url = f'https://cp.100tb.com/rest-api/vps.json/servers/{x.server_id}?api_key={self.api_key}'
-            delete_result = requests.delete(request_url)
-            print(delete_result)
+    def delete_vm(self, server_id):
+        request_url = f'https://cp.100tb.com/rest-api/vps.json/servers/{server_id}?api_key={self.api_key}'
+        delete_result = requests.delete(request_url)
 
     def setup_squid(self, servers, startup_script_file_location, squid_service_location):
         service_name = squid_service_location.replace('.service', '')
@@ -36,7 +34,7 @@ class ProxyGen100TB:
             except UnexpectedExit as e:
                 print("Caught error while rebooting machine")
     
-    def create_vm(self, location_id):
+    def create_vm(self, location_id, proxy_username, proxy_password):
         name_generator = haikunator.Haikunator()
         vm_name = name_generator.haikunate()
         password = name_generator.haikunate()
@@ -54,7 +52,7 @@ class ProxyGen100TB:
         creation_result = json.loads(requests.post(request_url, request_params).text)
         print(creation_result)
 
-        return proxymodels.Server100TB(location_id, creation_result['server'], vm_name, creation_result['ip'], 'root', password)
+        return proxymodels.Server100TB(location_id, creation_result['server'], vm_name, creation_result['ip'], 'root', password, proxy_username, proxy_password, 80)
     
     def get_vm_status(self, vm_id):
         request_url = f'https://cp.100tb.com/rest-api/vps.json/servers/{vm_id}/status/?api_key={self.api_key}'
@@ -107,22 +105,20 @@ class ProxyGen100TB:
         startup_script.close()
 
     def create_proxies(self, proxy_count, location_id, proxy_username, proxy_password):
-        proxy_list = []
         servers = []
 
         for x in range(proxy_count):
-            servers.append(self.create_vm(location_id))
-            proxy_list.append(servers[x].ip_address + f":80:{proxy_username}:{proxy_password}")
+            servers.append(self.create_vm(location_id, proxy_username, proxy_password))
         self.wait_for_vms(servers)
         self.get_new_startup_script('proxystartupscript', 'squidsetupscript', 'username', proxy_username, 'password', proxy_password)
         self.get_new_squid_setup_service('squidsetup.service', 'proxysetup.service', 'proxystartupscript', 'squidsetupscript')
         self.setup_squid(servers, 'squidsetupscript', 'proxysetup.service')
 
-        return proxy_list, servers
+        return servers
 
 def main():
     name_generator = haikunator.Haikunator()
-    proxy_gen = ProxyGen100TB(os.environ.get('100TB_API_KEY'))
+    proxy_gen = ProxyGen100TB()
     proxy_count = int(input('How many proxies do you want? '))
     proxies, servers = proxy_gen.create_proxies(proxy_count, 2, name_generator.haikunate(), name_generator.haikunate())
     for x in proxies:
