@@ -6,6 +6,7 @@ from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute import ComputeManagementClient
+from msrestazure.azure_exceptions import CloudError
 from haikunator import Haikunator
 import proxytester
 import proxymodels
@@ -161,10 +162,18 @@ class AzureProxyGen:
         createVMResponse = self.compute_client.virtual_machines.create_or_update(group_name, vm_name, vm_parameters)
     
     def delete_vm_completely(self, group_name, disk_name, nic_name, ip_name, vm_name):
+        vm_deleted = False
         self.compute_client.virtual_machines.delete(group_name, vm_name)
-        self.compute_client.disks.delete(group_name, disk_name)
+        while(vm_deleted == False):
+            try:
+                self.compute_client.virtual_machines.get(group_name, vm_name)
+            except CloudError as e:
+                vm_deleted = True
+                break
+            time.sleep(10)
         self.network_client.network_interfaces.delete(group_name, nic_name)
         self.network_client.public_ip_addresses.delete(group_name, ip_name)
+        self.compute_client.disks.delete(group_name, disk_name)
 
     def initialize_account(self, location):
         default_resource_group_name = 'sneaker-tools-proxy-resource-group'
