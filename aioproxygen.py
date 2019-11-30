@@ -1,5 +1,6 @@
 import awsproxygen
 import azureproxygen
+import proxygen100tb
 import proxymodels
 import os
 import haikunator
@@ -106,6 +107,10 @@ def terminate_proxies(proxy_list_location):
         proxy_gen = azureproxygen.AzureProxyGen()
         for x in proxy_list_dict['proxies']:
             proxy_gen.delete_vm_completely(x['resource_group_name'], x['disk_name'], x['nic_name'], x['ip_name'], x['vm_name'])
+    if(proxy_list_dict['cloud_provider'] == '100tb'):
+        proxy_gen = proxygen100tb.ProxyGen100TB()
+        for x in proxy_list_dict['proxies']:
+            proxy_gen.delete_vm(x['server_id'])
     
 
 def create_proxies(user_option):
@@ -127,6 +132,14 @@ def create_proxies(user_option):
         cloud_provider = 'azure'
         servers = proxy_gen.create_proxies(proxy_count, 'eastus', 'proxystartupscript', False, name_gen.haikunate(), name_gen.haikunate())
         print("Here are your generated proxies:")
+        for x in servers:
+            proxy_list.append(x.to_json())
+            print(x.to_string())
+    elif(user_option == 3):
+        cloud_provider = '100tb'
+        proxy_gen = proxygen100tb.ProxyGen100TB()
+        servers = proxy_gen.create_proxies(proxy_count, 2, name_gen.haikunate(), name_gen.haikunate())
+        print("Here are your generated proxies: ")
         for x in servers:
             proxy_list.append(x.to_json())
             print(x.to_string())
