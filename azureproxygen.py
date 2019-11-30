@@ -74,7 +74,7 @@ class AzureProxyGen:
         subscription_id = os.environ.get('AZURE_SUBSCRIPTION_ID')
         return subscription_id
 
-    def get_startup_script(self, file_name, proxy_username_identifier, proxy_password_identifier, proxy_username, proxy_password):
+    def get_startup_script(self, file_name, proxy_username_identifier,  proxy_username, proxy_password_identifier, proxy_password):
         startup_script_file = open(file_name, "r")
         startup_script = startup_script_file.read()
         startup_script_file.close()
@@ -196,7 +196,7 @@ class AzureProxyGen:
         security_group_name = 'sneaker-tools-proxies-security-group'
         
         # get startup script
-        startup_script = self.get_startup_script(startup_script_name, 'username', 'password', proxy_username, proxy_password)
+        startup_script = self.get_startup_script(startup_script_name, 'username', proxy_username, 'password', proxy_password)
         
         # one time networking variables
         security_group = self.get_security_group_info(group_name, security_group_name)
