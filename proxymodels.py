@@ -96,5 +96,12 @@ class Server100TB:
             'label': self.label,
             'username': self.username,
             'password': self.password,
-            'ip_address': self.ip_address
+            'ip_address': self.ip_address,
+            'proxy_username': self.proxy_username,
+            'proxy_password': self.proxy_password,
+            'proxy_port': self.proxy_port
         }
+        return server
+    
+    def to_string(self):
+        return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
