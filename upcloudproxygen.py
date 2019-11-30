@@ -37,7 +37,7 @@ class UpcloudProxyGen:
                 "user_data": self.get_startup_script(startup_script_location, proxy_username_identifier, proxy_username, proxy_password_identifier, proxy_password)
             }
         }
-        response = requests.post('https://api.upcloud.com/1.3/server', json.dumps(server), auth=self.api_authentication, headers={"content-type": "application/json"})
+        response = requests.post(self.base_url + '/server', json.dumps(server), auth=self.api_authentication, headers={"content-type": "application/json"})
 
         return proxymodels.UpcloudServer()
 
@@ -53,11 +53,12 @@ class UpcloudProxyGen:
         return startup_script
 
     def delete_server(self, server_uuid):
-        return
+        delete_result = requests.delete(self.base_url + f'/server/{server_uuid}/?storages=1', auth=self.api_authentication)
 
 def main():
     proxy_gen = UpcloudProxyGen()
-    proxy_gen.create_server('us-chi1', 'proxystartupscript', 'username', 'testuser', 'password', 'testpassword')
+    #proxy_gen.create_server('us-chi1', 'proxystartupscript', 'username', 'testuser', 'password', 'testpassword')
+    proxy_gen.delete_server('00354591-4517-4bce-92f7-e300cbf2151c')
 
 if __name__ == "__main__":
     main()
