@@ -105,3 +105,30 @@ class Server100TB:
     
     def to_string(self):
         return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
+
+class UpcloudServer:
+    uuid = None
+    ip_address = None
+    proxy_username = None
+    proxy_password = None
+    proxy_port = None
+
+    def __init__(self, uuid, ip_address, proxy_username, proxy_password, proxy_port):
+        self.uuid = uuid
+        self.ip_address = ip_address
+        self.proxy_username = proxy_username
+        self.proxy_password = proxy_password
+        self.proxy_port = proxy_port
+    
+    def to_json(self):
+        server = {
+            'uuid': self.uuid,
+            'ip_address': self.ip_address,
+            'proxy_username': self.proxy_username,
+            'proxy_password': self.proxy_password,
+            'proxy_port': self.proxy_port
+        }
+        return server
+    
+    def to_string(self):
+        return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
