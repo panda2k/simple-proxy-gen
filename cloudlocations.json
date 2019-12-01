@@ -94,5 +94,18 @@
         "london": "uk-lon1",
         "chicago": "us-chi1",
         "san jose": "us-sjo1"
+    },
+    "linode": {
+        "mumbai": "ap-west",
+        "toronto": "ca-central",
+        "sydney": "ap-southeast",
+        "dallas": "us-central",
+        "fremont california": "us-west",
+        "atlanta": "us-southeast",
+        "newark new york": "us-east",
+        "london": "eu-west",
+        "singapore": "ap-south",
+        "frankfurt": "eu-central",
+        "tokyo": "ap-northeast"
     }
 }
