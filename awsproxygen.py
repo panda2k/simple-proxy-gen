@@ -6,6 +6,7 @@ import pytz
 import datetime
 import base64
 import proxymodels
+import os
 from botocore.exceptions import ClientError
 
 class AWSProxyGen:
@@ -15,6 +16,11 @@ class AWSProxyGen:
     def __init__(self):
         self.ec2_client = boto3.client('ec2')
         self.ec2_resource = boto3.resource('ec2')
+    
+    def change_region(self, region_id):
+        aws_config_file = open(os.path.expanduser('~') + "\\.aws\\config", 'w')
+        aws_config_file.write(f"[default]\nregion = {region_id}\noutput = json")
+        aws_config_file.close()
     
     def cancel_spot_fleet(self, spot_fleet_id):
         cancel_response = self.ec2_client.cancel_spot_fleet_requests(
@@ -206,10 +212,11 @@ class AWSProxyGen:
 
 def main():
     proxy_gen = AWSProxyGen()
-    proxy_count = int(input("How many proxies would you like to create: "))
-    proxy_list_name = input("What do you want to name this proxy list: ")
-    proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, 'testing', 'passtest')
-    print(proxies)
+    proxy_gen.change_region('us-east-1')
+    #proxy_count = int(input("How many proxies would you like to create: "))
+    #proxy_list_name = input("What do you want to name this proxy list: ")
+    #proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, 'testing', 'passtest')
+    #print(proxies)
 
 if __name__ == "__main__":
     main()
