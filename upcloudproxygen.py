@@ -2,6 +2,7 @@ import os
 import requests
 import json
 import proxymodels
+import time
 from requests.auth import HTTPBasicAuth
 import haikunator
 
@@ -37,9 +38,9 @@ class UpcloudProxyGen:
                 "user_data": self.get_startup_script(startup_script_location, proxy_username_identifier, proxy_username, proxy_password_identifier, proxy_password)
             }
         }
-        response = requests.post(self.base_url + '/server', json.dumps(server), auth=self.api_authentication, headers={"content-type": "application/json"})
+        response = json.loads(requests.post(self.base_url + '/server', json.dumps(server), auth=self.api_authentication, headers={"content-type": "application/json"}).text)
 
-        return proxymodels.UpcloudServer()
+        return proxymodels.UpcloudServer(response['server']['uuid'], response['server']['ip_addresses']['ip_address'][1]['address'], proxy_username, proxy_password, 80)
 
     def get_startup_script(self, file_name, proxy_username_identifier,  proxy_username, proxy_password_identifier, proxy_password):
         startup_script_file = open(file_name, "r")
@@ -52,13 +53,38 @@ class UpcloudProxyGen:
 
         return startup_script
 
+    def shutdown_server(self, server_uuid):
+        request = {
+            "stop_server": {
+                "stop_type": "hard",
+                "timeout": "60"
+            }
+        }
+        response = requests.post(self.base_url + f'/server/{server_uuid}/stop', json.dumps(request), auth=self.api_authentication, headers={"content-type": "application/json"})
+
+    def wait_for_server_shutdown(self, server_uuid):
+        while(json.loads(requests.get(self.base_url + f'/server/{server_uuid}', auth=self.api_authentication).text)['server']['state'] != 'stopped'):
+            time.sleep(10)
+    
     def delete_server(self, server_uuid):
         delete_result = requests.delete(self.base_url + f'/server/{server_uuid}/?storages=1', auth=self.api_authentication)
+        print(delete_result.text)
+
+    def create_proxies(self, zone, proxy_count, proxy_username, proxy_password):
+        servers = []
+        for x in range(proxy_count):
+            servers.append(self.create_server(zone, 'proxystartupscript', 'username', proxy_username, 'password', proxy_password))
+        
+        return servers
 
 def main():
     proxy_gen = UpcloudProxyGen()
-    #proxy_gen.create_server('us-chi1', 'proxystartupscript', 'username', 'testuser', 'password', 'testpassword')
-    proxy_gen.delete_server('00354591-4517-4bce-92f7-e300cbf2151c')
+    #servers = proxy_gen.create_proxies("us-chi1", 1, 'pwbo', 'pwno')
+    #input('type anything to delete servers')
+    #for x in servers:
+    #proxy_gen.shutdown_server('0066f236-84d4-4b28-bba8-aeb11c897e58')
+    proxy_gen.wait_for_server_shutdown('0066f236-84d4-4b28-bba8-aeb11c897e58')
+    proxy_gen.delete_server('0066f236-84d4-4b28-bba8-aeb11c897e58')
 
 if __name__ == "__main__":
     main()
