@@ -1,6 +1,8 @@
 import awsproxygen
 import azureproxygen
 import proxygen100tb
+import upcloudproxygen
+import googlecloudproxygen
 import proxymodels
 import os
 import haikunator
@@ -32,7 +34,7 @@ def print_proxy_list_options():
     print("3. View proxy list analytics")
 
 def get_region_select(user_option):
-    cloud_providers = ['aws', 'azure', '100tb', 'googlecloud', 'upcloud']
+    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud']
     cloud_provider = cloud_providers[user_option - 1]
     valid_input = False
     region_dict_file = open('cloudlocations.json', 'r')
@@ -124,15 +126,21 @@ def terminate_proxies(proxy_list_location):
     if(proxy_list_dict['cloud_provider'] == 'aws'):
         proxy_gen = awsproxygen.AWSProxyGen()
         proxy_gen.cancel_spot_fleet(proxy_list_dict['proxies'][0]['spot_fleet_id'])
-    if(proxy_list_dict['cloud_provider'] == 'azure'):
+    elif(proxy_list_dict['cloud_provider'] == 'azure'):
         proxy_gen = azureproxygen.AzureProxyGen()
         for x in proxy_list_dict['proxies']:
             proxy_gen.delete_vm_completely(x['resource_group_name'], x['disk_name'], x['nic_name'], x['ip_name'], x['vm_name'])
-    if(proxy_list_dict['cloud_provider'] == '100tb'):
+    elif(proxy_list_dict['cloud_provider'] == '100tb'):
         proxy_gen = proxygen100tb.ProxyGen100TB()
         for x in proxy_list_dict['proxies']:
             proxy_gen.delete_vm(x['server_id'])
-    
+    elif(proxy_list_dict['cloud_provider'] == 'upcloud'):
+        proxy_gen = upcloudproxygen.UpcloudProxyGen()
+        for x in proxy_list_dict['proxies']:
+            proxy_gen.shutdown_server(x['uuid'])
+        for x in proxy_list_dict['proxies']:
+            proxy_gen.wait_for_server_shutdown(x['uuid'])
+            proxy_gen.delete_server(x['uuid'])    
 
 def create_proxies(user_option, region):
     name_gen = haikunator.Haikunator()
@@ -144,27 +152,29 @@ def create_proxies(user_option, region):
         proxy_gen = awsproxygen.AWSProxyGen()
         cloud_provider = 'aws'
         proxy_gen.change_region(region)
-        proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, name_gen.haikunate(), name_gen.haikunate())
-        print("Here are your generated proxies:")
-        for x in proxies:
-            proxy_list.append(x.to_json())
-            print(x.to_string())
+        servers = proxy_gen.create_proxies(proxy_list_name, proxy_count, name_gen.haikunate(), name_gen.haikunate())
     elif(user_option == 2):
         proxy_gen = azureproxygen.AzureProxyGen()
         cloud_provider = 'azure'
         servers = proxy_gen.create_proxies(proxy_count, region, 'proxystartupscript', False, name_gen.haikunate(), name_gen.haikunate())
-        print("Here are your generated proxies:")
-        for x in servers:
-            proxy_list.append(x.to_json())
-            print(x.to_string())
     elif(user_option == 3):
         cloud_provider = '100tb'
         proxy_gen = proxygen100tb.ProxyGen100TB()
         servers = proxy_gen.create_proxies(proxy_count, region, name_gen.haikunate(), name_gen.haikunate())
-        print("Here are your generated proxies: ")
-        for x in servers:
-            proxy_list.append(x.to_json())
-            print(x.to_string())
+    elif(user_option == 4):
+        # TODO
+        cloud_provider = 'gcs'
+        proxy_gen = googlecloudproxygen.GoogleCloudProxyGen()
+    elif(user_option == 5):
+        cloud_provider = 'upcloud'
+        proxy_gen = upcloudproxygen.UpcloudProxyGen()
+        servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
+    
+    print("Here are your generated proxies: ")
+    for x in servers:
+        proxy_list.append(x.to_json())
+        print(x.to_string())
+
     proxy_list_dict = {
         'cloud_provider': cloud_provider,
         'proxies': proxy_list
