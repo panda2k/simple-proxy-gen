@@ -105,5 +105,12 @@
         "singapore": "ap-south",
         "frankfurt": "eu-central",
         "tokyo": "ap-northeast"
+    },
+    "vpsie": {
+        "new york": "ab70b3b6-9f22-11e3-8af5-005056aa8af7",
+        "virginia": "ab70b42f-9f22-11e3-8af5-005056aa8af7",
+        "california": "55f06b85-c9ee-11e3-9845-005056aa8af7",
+        "amsterdam": "af876af7-f295-11e4-b45d-005056aadd24",
+        "djibouti": "9e18689c-d12d-11e9-b4ba-005056aadd24"
     }
 }
