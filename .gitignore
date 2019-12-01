@@ -126,4 +126,5 @@ dmypy.json
 googlecloudcredentials.json
 squidsetupscript
 proxysetup.service
-*.json
+proxylists
+azure-locations.txt
