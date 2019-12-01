@@ -53,7 +53,7 @@ def get_region_select(user_option):
     return region_dict[cloud_provider][region]
 
 def check_for_credentials():
-    credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services'], [True, True, True, True]]
+    credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services', 'Upcloud', 'Linode'], [True, True, True, True, True, True]]
     if(os.environ.get('AZURE_CLIENT_ID') == None or os.environ.get('AZURE_CLIENT_SECRET') == None or os.environ.get('AZURE_TENANT_ID') == None or os.environ.get('AZURE_SUBSCRIPTION_ID') == None):
         credentials[1][0] = False
     if(os.environ.get('100TB_API_KEY') == None):
@@ -62,6 +62,10 @@ def check_for_credentials():
         credentials[1][2] = False
     if(os.path.exists(os.path.expanduser('~') + "\\.aws") == False):
         credentials[1][3] = False
+    if(os.environ.get('UPCLOUD_API_USERNAME') == None or os.environ.get('UPCLOUD_API_PASSWORD') == None):
+        credentials[1][4] = False
+    if(os.environ.get('LINODE_ACCESS_TOKEN') == None):
+        credentials[1][5] = False
 
     return credentials
 
@@ -91,6 +95,13 @@ def get_credentials(credentials_list):
             config_file = open(aws_folder_directory + "\\config", "w")
             config_file.write("[default]\nregion = us-east-1\noutput = json")
             config_file.close()
+    if(credentials_list[1][4] == False):
+        if(bool(input("You are missing Upcloud API credentials. Would you like to set them now? True or False "))):
+            os.environ['UPCLOUD_API_USERNAME'] = input("Input your Upcloud API Username: ")
+            os.environ['UPCLOUD_API_PASSWORD'] = input("Input your upcloud API Password: ")
+    if(credentials_list[1][5] == False):
+        if(bool(input("You are missing Linode credentials. Would you like to set them now? True or False "))):
+            os.environ['LINODE_ACCESS_TOKEN'] = input("Input your Linode API Access Token: ")
 
 def get_user_input(minimum_option, maximum_option, base_message, error_message):
     user_input = int(input(base_message))
