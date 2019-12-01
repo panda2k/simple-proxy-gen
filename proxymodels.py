@@ -159,3 +159,36 @@ class LinodeServer:
     
     def to_string(self):
         return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
+
+class VpsieServer:
+    server_id = None
+    ip_address = None
+    proxy_username = None
+    proxy_password = None
+    proxy_port = None
+    username = None
+    password = None
+
+    def __init__(self, server_id, username, password, ip_address, proxy_username, proxy_password, proxy_port):
+        self.server_id = server_id
+        self.ip_address = ip_address
+        self.proxy_username = proxy_username
+        self.proxy_password = proxy_password
+        self.proxy_port = proxy_port
+        self.username = username
+        self.password = password
+
+    def to_dict(self):
+        server = {
+            'server_id': self.server_id,
+            'ip_address': self.ip_address,
+            'proxy_username': self.proxy_username,
+            'proxy_password': self.proxy_password,
+            'proxy_port': self.proxy_port
+        }
+        
+        return server
+    
+    def to_string(self):
+        return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
+    
