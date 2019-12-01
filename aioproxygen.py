@@ -24,11 +24,31 @@ def print_proxy_options():
     print("2. Microsoft Azure")
     print("3. 100tb")
     print("4. Google Cloud")
+    print("5. Upcloud")
 
 def print_proxy_list_options():
     print("1. Terminate proxies in list")
     print("2. List proxies")
     print("3. View proxy list analytics")
+
+def get_region_select(user_option):
+    cloud_providers = ['aws', 'azure', '100tb', 'googlecloud', 'upcloud']
+    cloud_provider = cloud_providers[user_option - 1]
+    valid_input = False
+    region_dict_file = open('cloudlocations.json', 'r')
+    region_dict = json.load(region_dict_file)
+    region_dict_file.close()
+    print('Locations:')
+    for x in region_dict[cloud_provider]:
+        print(x.title())
+    region = input("Select your location by typing the locations name: ").lower()
+    while(valid_input == False):
+        if(region in region_dict[cloud_provider]):
+            valid_input = True
+        else:
+            region = input("Invalid region. Select your location by typing the locations name: ").lower()
+    
+    return region_dict[cloud_provider][region]
 
 def check_for_credentials():
     credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services'], [True, True, True, True]]
@@ -88,6 +108,7 @@ def get_proxies_from_list(proxy_list_location):
 def read_proxy_list(proxy_list_location):
     proxy_list_file = open(proxy_list_location, 'r')
     proxy_dict = json.load(proxy_list_file)
+    proxy_list_file.close()
 
     return proxy_dict
 
@@ -113,7 +134,7 @@ def terminate_proxies(proxy_list_location):
             proxy_gen.delete_vm(x['server_id'])
     
 
-def create_proxies(user_option):
+def create_proxies(user_option, region):
     name_gen = haikunator.Haikunator()
     proxy_list = []
     proxy_list_name = input("Proxy list name: ")
@@ -122,6 +143,7 @@ def create_proxies(user_option):
     if(user_option == 1):
         proxy_gen = awsproxygen.AWSProxyGen()
         cloud_provider = 'aws'
+        proxy_gen.change_region(region)
         proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, name_gen.haikunate(), name_gen.haikunate())
         print("Here are your generated proxies:")
         for x in proxies:
@@ -130,7 +152,7 @@ def create_proxies(user_option):
     elif(user_option == 2):
         proxy_gen = azureproxygen.AzureProxyGen()
         cloud_provider = 'azure'
-        servers = proxy_gen.create_proxies(proxy_count, 'eastus', 'proxystartupscript', False, name_gen.haikunate(), name_gen.haikunate())
+        servers = proxy_gen.create_proxies(proxy_count, region, 'proxystartupscript', False, name_gen.haikunate(), name_gen.haikunate())
         print("Here are your generated proxies:")
         for x in servers:
             proxy_list.append(x.to_json())
@@ -138,7 +160,7 @@ def create_proxies(user_option):
     elif(user_option == 3):
         cloud_provider = '100tb'
         proxy_gen = proxygen100tb.ProxyGen100TB()
-        servers = proxy_gen.create_proxies(proxy_count, 2, name_gen.haikunate(), name_gen.haikunate())
+        servers = proxy_gen.create_proxies(proxy_count, region, name_gen.haikunate(), name_gen.haikunate())
         print("Here are your generated proxies: ")
         for x in servers:
             proxy_list.append(x.to_json())
@@ -179,13 +201,17 @@ def main():
                     print(x)
             elif(proxy_list_option_choice == 3):
                 print("work in progress")
+    elif(menu_choice == 2):
+        print("ANALYTICS")
+        print("Hourly proxy cost: work in progress")
     elif(menu_choice == 3):
-        base_input_message = "Which cloud provider would you like to choose? Input a number 1 - 4: "
-        invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 4: "
+        base_input_message = "Which cloud provider would you like to choose? Input a number 1 - 5: "
+        invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 5: "
         get_credentials(check_for_credentials())
         print_proxy_options()
-        user_option = get_user_input(1, 4, base_input_message, invalid_input_message)
-        create_proxies(user_option)
+        user_option = get_user_input(1, 5, base_input_message, invalid_input_message)
+        region = get_region_select(user_option)
+        create_proxies(user_option, region)
 
     
 if __name__ == "__main__":
