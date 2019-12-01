@@ -3,6 +3,7 @@ import azureproxygen
 import proxygen100tb
 import upcloudproxygen
 import googlecloudproxygen
+import linodeproxygen
 import proxymodels
 import os
 import haikunator
@@ -27,6 +28,7 @@ def print_proxy_options():
     print("3. 100tb")
     print("4. Google Cloud")
     print("5. Upcloud")
+    print("6. Linode")
 
 def print_proxy_list_options():
     print("1. Terminate proxies in list")
@@ -34,7 +36,7 @@ def print_proxy_list_options():
     print("3. View proxy list analytics")
 
 def get_region_select(user_option):
-    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud']
+    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud', 'linode']
     cloud_provider = cloud_providers[user_option - 1]
     valid_input = False
     region_dict_file = open('cloudlocations.json', 'r')
@@ -151,7 +153,11 @@ def terminate_proxies(proxy_list_location):
             proxy_gen.shutdown_server(x['uuid'])
         for x in proxy_list_dict['proxies']:
             proxy_gen.wait_for_server_shutdown(x['uuid'])
-            proxy_gen.delete_server(x['uuid'])    
+            proxy_gen.delete_server(x['uuid'])
+    elif(proxy_list_dict['cloud_provider'] == 'linode'):
+        proxy_gen = linodeproxygen.LinodeProxygen()
+        for x in proxy_list_dict['proxies']:
+            proxy_gen.delete_server(x['server_id'])
 
 def create_proxies(user_option, region):
     name_gen = haikunator.Haikunator()
@@ -180,10 +186,14 @@ def create_proxies(user_option, region):
         cloud_provider = 'upcloud'
         proxy_gen = upcloudproxygen.UpcloudProxyGen()
         servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
+    elif(user_option == 6):
+        cloud_provider = 'linode'
+        proxy_gen = linodeproxygen.LinodeProxygen()
+        servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
     
     print("Here are your generated proxies: ")
     for x in servers:
-        proxy_list.append(x.to_json())
+        proxy_list.append(x.to_dict())
         print(x.to_string())
 
     proxy_list_dict = {
@@ -230,7 +240,7 @@ def main():
         invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 5: "
         get_credentials(check_for_credentials())
         print_proxy_options()
-        user_option = get_user_input(1, 5, base_input_message, invalid_input_message)
+        user_option = get_user_input(1, 6, base_input_message, invalid_input_message)
         region = get_region_select(user_option)
         create_proxies(user_option, region)
 
