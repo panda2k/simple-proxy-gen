@@ -134,6 +134,34 @@ def get_proxy_lists():
     
     return proxy_lists
 
+def get_proxy_price(provider, location_id):
+    proxy_price_file = open('cloudpricing.json', 'r')
+    proxy_prices = json.load(proxy_price_file)
+    proxy_price_file.close()
+
+    return proxy_prices[provider][location_id]
+
+def get_total_proxy_cost():
+    proxy_lists = get_proxy_lists()
+    total_hourly_cost = 0
+
+    for x in range(len(proxy_lists)):
+        proxy_list_dict = read_proxy_list(os.path.join(os.path.realpath(''), f'proxylists\\{proxy_lists[x]}.json'))
+        total_hourly_cost += proxy_list_dict['hourly_cost']
+    
+    return total_hourly_cost
+
+def get_proxy_list_cost():
+    proxy_lists = get_proxy_lists()
+    proxy_lists_hourly_costs = { }
+    for x in range(len(proxy_lists)):
+        proxy_list_dict = read_proxy_list(os.path.join(os.path.realpath(''), f'proxylists\\{proxy_lists[x]}.json'))
+        proxy_lists_hourly_costs[proxy_lists[x]] = proxy_list_dict['hourly_cost']
+    
+    sorted_proxy_lists_hourly_costs = sorted(proxy_lists_hourly_costs.items(), key=lambda x: x[1]) # sort proxy lists by hourly cost
+    
+    return sorted_proxy_lists_hourly_costs
+
 def terminate_proxies(proxy_list_location):
     proxy_list_dict = read_proxy_list(proxy_list_location)
     if(proxy_list_dict['cloud_provider'] == 'aws'):
@@ -141,8 +169,10 @@ def terminate_proxies(proxy_list_location):
         proxy_gen.cancel_spot_fleet(proxy_list_dict['proxies'][0]['spot_fleet_id'])
     elif(proxy_list_dict['cloud_provider'] == 'azure'):
         proxy_gen = azureproxygen.AzureProxyGen()
+        servers = []
         for x in proxy_list_dict['proxies']:
-            proxy_gen.delete_vm_completely(x['resource_group_name'], x['disk_name'], x['nic_name'], x['ip_name'], x['vm_name'])
+            servers.append(proxymodels.AzureServer(x['ip_address'], 'doesntmatter', 'doesntmatter', 80, x['disk_name'], x['ip_name'], x['nic_name'], x['vm_name'], x['resource_group_name']))
+        proxy_gen.delete_vms(servers)
     elif(proxy_list_dict['cloud_provider'] == '100tb'):
         proxy_gen = proxygen100tb.ProxyGen100TB()
         for x in proxy_list_dict['proxies']:
@@ -164,7 +194,7 @@ def create_proxies(user_option, region):
     proxy_list = []
     proxy_list_name = input("Proxy list name: ")
     proxy_count = int(input("How many proxies would you like to generate: "))
-    proxy_list_file = open(os.path.join(os.path.dirname(os.path.realpath('__file__')), f'proxylists\\{proxy_list_name}.json'), 'a')
+    proxy_list_file = open(os.path.join(os.path.realpath(''), f'proxylists\\{proxy_list_name}.json'), 'a')
     if(user_option == 1):
         proxy_gen = awsproxygen.AWSProxyGen()
         cloud_provider = 'aws'
@@ -198,6 +228,8 @@ def create_proxies(user_option, region):
 
     proxy_list_dict = {
         'cloud_provider': cloud_provider,
+        'region': region,
+        'hourly_cost': len(proxy_list) * get_proxy_price(cloud_provider, region),
         'proxies': proxy_list
     }
     json.dump(proxy_list_dict, proxy_list_file)
@@ -219,7 +251,7 @@ def main():
         else:
             proxy_list_choice = get_user_input(1, len(proxy_lists) + 1, base_input_message, invalid_input_message)
             print(proxy_lists[proxy_list_choice - 1])
-            proxy_list_file_location = os.path.join(os.path.dirname(os.path.realpath('__file__')), f'proxylists\\{proxy_lists[proxy_list_choice - 1]}.json')
+            proxy_list_file_location = os.path.join(os.path.realpath(''), f'proxylists\\{proxy_lists[proxy_list_choice - 1]}.json')
             print_proxy_list_options()
             proxy_list_option_choice = get_user_input(1, 3, base_proxy_list_option_choice_message, invalid_input_message)
             if(proxy_list_option_choice == 1):
@@ -233,8 +265,15 @@ def main():
             elif(proxy_list_option_choice == 3):
                 print("work in progress")
     elif(menu_choice == 2):
+        proxy_list_cost = get_proxy_list_cost()
         print("ANALYTICS")
-        print("Hourly proxy cost: work in progress")
+        print("Hourly proxy cost: $" + str(round(get_total_proxy_cost(), 5)))
+        print("Proxy lists sorted by hourly cost:")
+        if(len(get_proxy_lists()) == 0):
+            print("No proxy lists found")
+        else:
+            for x in range(len(proxy_list_cost) - 1, -1, -1):
+                print(proxy_list_cost[x][0] + " - $" + str(round(proxy_list_cost[x][1], 5)))
     elif(menu_choice == 3):
         base_input_message = "Which cloud provider would you like to choose? Input a number 1 - 5: "
         invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 5: "
