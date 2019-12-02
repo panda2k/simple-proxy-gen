@@ -176,21 +176,20 @@ class AzureProxyGen:
         self.compute_client.disks.delete(group_name, disk_name)
 
     def initialize_account(self, location):
-        default_resource_group_name = 'sneaker-tools-proxy-resource-group'
+        default_resource_group_name = 'sneaker-tools-proxy-resource-group-' + location
         self.create_resource_group(location, default_resource_group_name)
         self.create_virtual_network(default_resource_group_name, location, 'sneaker-tools-proxy-virtual-network')
         self.create_subnet(default_resource_group_name, 'sneaker-tools-proxy-virtual-network', 'sneaker-tools-proxy-subnet')
         self.create_security_group(default_resource_group_name, location, 'sneaker-tools-proxies-security-group')
 
     def create_proxies(self, proxy_count, location, startup_script_name, first_time_setup, proxy_username, proxy_password):
-        if(first_time_setup):
-            self.initialize_account(location) # initialize account to make sure all requirements are satisfied
+        self.initialize_account(location) # initialize account to make sure all requirements are satisfied
         # general purpose objects
         name_generator = Haikunator()
         server_list = []
 
         # default required azure resources
-        group_name = 'sneaker-tools-proxy-resource-group'
+        group_name = 'sneaker-tools-proxy-resource-group-' + location
         vnet_name = 'sneaker-tools-proxy-virtual-network'
         subnet_name = 'sneaker-tools-proxy-subnet'
         security_group_name = 'sneaker-tools-proxies-security-group'
