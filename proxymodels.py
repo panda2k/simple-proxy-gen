@@ -17,7 +17,7 @@ class AWSProxy:
     def to_string(self):
         return self.ip_address + ':' + str(self.port) + ':' + self.username + ':' + self.password
     
-    def to_json(self):
+    def to_dict(self):
         proxy = {
             'spot_fleet_id': self.spot_fleet_id, 
             'ip_address': self.ip_address,

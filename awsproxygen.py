@@ -91,6 +91,25 @@ class AWSProxyGen:
 
         return security_group_id
 
+    def get_image_id(self):
+        now = datetime.datetime.now()
+        now = now.replace(day=1)
+        now = now - datetime.timedelta(days=1)
+        images = self.ec2_client.describe_images(
+            DryRun = False,
+            #Owners = ['aws-marketplace'],
+            Filters = [
+                {
+                    'Name': 'name',
+                    'Values': [
+                        'ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-' + now.strftime("%Y%m") + '??' 
+                    ]
+                }
+            ]
+        )
+        
+        return images['Images'][0]['ImageId']
+
     def create_spot_instance_proxies(self, proxy_list_name, proxy_count, startup_script_location, startup_script_username_identifier, proxy_username, startup_script_password_identifier, proxy_password, security_group_id, security_group_name):
         spot_fleet_response = self.ec2_client.request_spot_fleet(
             DryRun=False,
@@ -108,7 +127,7 @@ class AWSProxyGen:
                             'GroupId': security_group_id
                         },
                     ],
-                    'ImageId': 'ami-04763b3055de4860b',
+                    'ImageId': self.get_image_id(),
                     'InstanceType': 't3.nano',
                     'UserData': base64.b64encode(self.get_startup_script(startup_script_location, startup_script_username_identifier, proxy_username, startup_script_password_identifier, proxy_password).encode("utf-8")).decode("utf-8"),
                     'TagSpecifications': [
@@ -212,11 +231,12 @@ class AWSProxyGen:
 
 def main():
     proxy_gen = AWSProxyGen()
-    proxy_gen.change_region('us-east-1')
+    #proxy_gen.change_region('us-east-1')
     #proxy_count = int(input("How many proxies would you like to create: "))
     #proxy_list_name = input("What do you want to name this proxy list: ")
     #proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, 'testing', 'passtest')
     #print(proxies)
+    print(proxy_gen.get_image_id())
 
 if __name__ == "__main__":
     main()
