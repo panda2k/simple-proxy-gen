@@ -175,6 +175,27 @@ class AzureProxyGen:
         self.network_client.public_ip_addresses.delete(group_name, ip_name)
         self.compute_client.disks.delete(group_name, disk_name)
 
+    def delete_vms(self, servers):
+        for x in servers:
+            self.compute_client.virtual_machines.delete(x.resource_group_name, x.vm_name)
+        for x in servers:
+            while(True):
+                try:
+                    self.compute_client.virtual_machines.get(x.resource_group_name, x.vm_name)
+                except CloudError as e:
+                    break
+                time.sleep(10)
+            self.network_client.network_interfaces.delete(x.resource_group_name, x.nic_name)
+            self.compute_client.disks.delete(x.resource_group_name, x.disk_name)
+        for x in servers:
+            while(True):
+                try:
+                    self.network_client.network_interfaces.get(x.resource_group_name, x.nic_name)
+                except CloudError as e:
+                    break
+                time.sleep(10)
+        self.network_client.public_ip_addresses.delete(x.resource_group_name, x.ip_name)
+
     def initialize_account(self, location):
         default_resource_group_name = 'sneaker-tools-proxy-resource-group-' + location
         self.create_resource_group(location, default_resource_group_name)
