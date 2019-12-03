@@ -3,6 +3,7 @@ import base64
 import requests
 import time
 import json
+import proxymodels
 
 class VultrProxyGen:
     access_token = None
@@ -32,6 +33,7 @@ class VultrProxyGen:
         startup_script_file.close()
         startup_script = startup_script.replace(proxy_username_identifier, proxy_username)
         startup_script = startup_script.replace(proxy_password_identifier, proxy_password)
+        startup_script.encode('unicode_escape')
 
         startup_script_params = {
             'name': startup_script_name,
@@ -49,6 +51,12 @@ class VultrProxyGen:
         
         return response.status_code
     
+    def delete_script(self, script_id):
+        request = {
+            'SCRIPTID': script_id
+        }
+        response = requests.post(self.base_url + '/v1/startupscript/destroy', request, headers=self.auth_header)
+
     def get_server_ip_address(self, sub_id):
         ip = json.loads(requests.get(self.base_url + '/v1/server/list_ipv4?SUBID=' + sub_id, headers=self.auth_header).text)[sub_id][0]['ip']
         while(ip == '0.0.0.0'):
@@ -56,16 +64,29 @@ class VultrProxyGen:
             ip = json.loads(requests.get(self.base_url + '/v1/server/list_ipv4?SUBID=' + sub_id, headers=self.auth_header).text)[sub_id][0]['ip']
 
         return ip
+    
+    def create_proxies(self, location_id, proxy_count, proxy_username, proxy_password):
+        servers = []
+        server_ids = []
+        script_id = self.create_startup_script('proxystartupscript', 'username', proxy_username, 'password', proxy_password, 'proxysetup-' + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
+        #script_id = 651517
+        for x in range(proxy_count):
+            server_ids.append(self.create_server(location_id, script_id))
+        for x in server_ids:
+            ip_address = self.get_server_ip_address(x)
+            servers.append(proxymodels.VultrServer(x, ip_address, proxy_username, proxy_password, 80, script_id))
+        
+        return servers
 
 def main():
     proxy_gen = VultrProxyGen()
-    script_id = proxy_gen.create_startup_script('proxystartupscript', 'username', 'testuser', 'password', 'testpassword', 'testscript')
-    print(script_id)
-    server_id = proxy_gen.create_server(4, script_id)
-    print(server_id)
-    print(proxy_gen.get_server_ip_address(server_id))
-    input("type anything to delete server")
-    proxy_gen.delete_server(server_id)
+    servers = proxy_gen.create_proxies(4, 5, 'tester', 'passtest')
+    for x in servers:
+        print(x.to_string())
+    input('ready to delete?')
+    proxy_gen.delete_script(servers[0].startup_script_id)
+    for x in servers:
+        proxy_gen.delete_server(x.server_id)
 
 if __name__ == "__main__":
     main()
