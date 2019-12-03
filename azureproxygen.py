@@ -203,7 +203,7 @@ class AzureProxyGen:
         self.create_subnet(default_resource_group_name, 'sneaker-tools-proxy-virtual-network', 'sneaker-tools-proxy-subnet')
         self.create_security_group(default_resource_group_name, location, 'sneaker-tools-proxies-security-group')
 
-    def create_proxies(self, proxy_count, location, startup_script_name, first_time_setup, proxy_username, proxy_password):
+    def create_proxies(self, location, proxy_count, proxy_username, proxy_password):
         self.initialize_account(location) # initialize account to make sure all requirements are satisfied
         # general purpose objects
         name_generator = Haikunator()
@@ -216,7 +216,7 @@ class AzureProxyGen:
         security_group_name = 'sneaker-tools-proxies-security-group'
         
         # get startup script
-        startup_script = self.get_startup_script(startup_script_name, 'username', proxy_username, 'password', proxy_password)
+        startup_script = self.get_startup_script('proxystartupscript', 'username', proxy_username, 'password', proxy_password)
         
         # one time networking variables
         security_group = self.get_security_group_info(group_name, security_group_name)

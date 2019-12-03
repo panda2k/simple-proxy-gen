@@ -104,7 +104,7 @@ class ProxyGen100TB:
         new_startup_script.close()
         startup_script.close()
 
-    def create_proxies(self, proxy_count, location_id, proxy_username, proxy_password):
+    def create_proxies(self, location_id, proxy_count, proxy_username, proxy_password):
         servers = []
 
         for x in range(proxy_count):

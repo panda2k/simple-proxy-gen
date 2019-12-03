@@ -110,7 +110,7 @@ class AWSProxyGen:
         
         return images['Images'][0]['ImageId']
 
-    def create_spot_instance_proxies(self, proxy_list_name, proxy_count, startup_script_location, startup_script_username_identifier, proxy_username, startup_script_password_identifier, proxy_password, security_group_id, security_group_name):
+    def create_spot_instance_proxies(self, proxy_count, startup_script_location, startup_script_username_identifier, proxy_username, startup_script_password_identifier, proxy_password, security_group_id, security_group_name):
         spot_fleet_response = self.ec2_client.request_spot_fleet(
             DryRun=False,
             SpotFleetRequestConfig={
@@ -130,17 +130,6 @@ class AWSProxyGen:
                     'ImageId': self.get_image_id(),
                     'InstanceType': 't3.nano',
                     'UserData': base64.b64encode(self.get_startup_script(startup_script_location, startup_script_username_identifier, proxy_username, startup_script_password_identifier, proxy_password).encode("utf-8")).decode("utf-8"),
-                    'TagSpecifications': [
-                        {
-                            'ResourceType': 'instance',
-                            'Tags': [
-                                {
-                                    'Key': 'list_name',
-                                    'Value': proxy_list_name
-                                },
-                            ]
-                        },
-                    ]
                 },
                 ],
                 'TargetCapacity': proxy_count,
@@ -213,14 +202,15 @@ class AWSProxyGen:
         
         return security_group_id
     
-    def create_proxies(self, proxy_list_name, proxy_count, proxy_username, proxy_password):
+    def create_proxies(self, region, proxy_count, proxy_username, proxy_password):
         proxies = []
+        self.change_region(region)
         try:
             security_group_id = self.create_security_group("simple-sneaker-tools-proxy-security-group")
         except ClientError as e:
             security_group_id = self.get_security_group_id("simple-sneaker-tools-proxy-security-group")
         
-        spot_fleet_id = self.create_spot_instance_proxies(proxy_list_name, proxy_count, 'proxystartupscript', 'username', proxy_username, 'password', proxy_password, security_group_id, "simple-sneaker-tools-proxy-security-group")['SpotFleetRequestId']
+        spot_fleet_id = self.create_spot_instance_proxies(proxy_count, 'proxystartupscript', 'username', proxy_username, 'password', proxy_password, security_group_id, "simple-sneaker-tools-proxy-security-group")['SpotFleetRequestId']
         time.sleep(15)
         self.wait_for_spot_fleet_fulfillment(spot_fleet_id)
         ip_list = self.get_spot_instance_ip(spot_fleet_id, proxy_count)
