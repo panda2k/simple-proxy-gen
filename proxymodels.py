@@ -192,3 +192,29 @@ class VpsieServer:
     def to_string(self):
         return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
     
+class VultrServer:
+    server_id = None
+    ip_address = None
+    proxy_username = None
+    proxy_password = None
+    proxy_port = None
+    startup_script_id = None
+
+    def __init__(self, server_id, ip_address, proxy_username, proxy_password, proxy_port, startup_script_id):
+        self.server_id = server_id
+        self.ip_address = ip_address
+        self.proxy_username = proxy_username
+        self.proxy_password = proxy_password
+        self.proxy_port = proxy_port
+        self.startup_script_id = startup_script_id
+    
+    def to_dict(self):
+        server = {
+            'server_id': self.server_id,
+            'startup_script_id': self.startup_script_id,
+            'ip_address': self.ip_address,
+            'proxy_username': self.proxy_username,
+            'proxy_password': self.proxy_password,
+            'proxy_port': self.proxy_port
+        }
+        return server
