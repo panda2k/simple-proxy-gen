@@ -218,3 +218,6 @@ class VultrServer:
             'proxy_port': self.proxy_port
         }
         return server
+        
+    def to_string(self):
+        return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
