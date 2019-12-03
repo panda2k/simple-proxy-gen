@@ -5,6 +5,7 @@ import upcloudproxygen
 import googlecloudproxygen
 import linodeproxygen
 import vultrproxygen
+import digitaloceanproxygen
 import proxymodels
 import os
 import haikunator
@@ -31,6 +32,7 @@ def print_proxy_options():
     print("5. Upcloud")
     print("6. Linode")
     print("7. Vultr")
+    print("8. Digital Ocean")
 
 def print_proxy_list_options():
     print("1. Terminate proxies in list")
@@ -38,7 +40,7 @@ def print_proxy_list_options():
     print("3. View proxy list analytics")
 
 def get_region_select(user_option):
-    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud', 'linode', 'vultr']
+    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud', 'linode', 'vultr', 'digitalocean']
     cloud_provider = cloud_providers[user_option - 1]
     valid_input = False
     region_dict_file = open('cloudlocations.json', 'r')
@@ -57,7 +59,7 @@ def get_region_select(user_option):
     return region_dict[cloud_provider][region]
 
 def check_for_credentials():
-    credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services', 'Upcloud', 'Linode', 'Vultr'], [True, True, True, True, True, True, True]]
+    credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services', 'Upcloud', 'Linode', 'Vultr', 'Digital Ocean'], [True, True, True, True, True, True, True, True]]
     if(os.environ.get('AZURE_CLIENT_ID') == None or os.environ.get('AZURE_CLIENT_SECRET') == None or os.environ.get('AZURE_TENANT_ID') == None or os.environ.get('AZURE_SUBSCRIPTION_ID') == None):
         credentials[1][0] = False
     if(os.environ.get('100TB_API_KEY') == None):
@@ -72,6 +74,8 @@ def check_for_credentials():
         credentials[1][5] = False
     if(os.environ.get('VULTR_ACCESS_TOKEN') == None):
         credentials[1][6] = False
+    if(os.environ.get('DIGITAL_OCEAN_ACCESS_TOKEN') == None):
+        credentials[1][7] = False
 
     return credentials
 
@@ -111,6 +115,9 @@ def get_credentials(credentials_list):
     if(credentials_list[1][6] == False):
         if(bool(input("You are missing your Vultr access key. Would you like to set it now? True or False "))):
             os.environ['VULTR_ACCESS_TOKEN'] = input("Input your Vultr access key: ")
+    if(credentials_list[1][7] == False):
+        if(bool(input("You are missing your Digital Ocean access token. Would you like to set it now? True or False"))):
+            os.environ['DIGITAL_OCEAN_ACCESS_TOKEN'] = input("Input your Digital Ocean access token")
 
 def get_user_input(minimum_option, maximum_option, base_message, error_message):
     user_input = int(input(base_message))
@@ -200,6 +207,10 @@ def terminate_proxies(proxy_list_location):
         for x in proxy_list_dict['proxies']:
             proxy_gen.delete_server(x['server_id'])
         proxy_gen.delete_script(proxy_list_dict['proxies'][0]['startup_script_id'])
+    elif(proxy_list_dict['cloud_provider'] == 'digitalocean'):
+        proxy_gen = digitaloceanproxygen.DigitalOceanProxyGen()
+        for x in proxy_list_dict['proxies']:
+            proxy_gen.delete_vm(x['server_id'])
 
 def create_proxies(user_option, region):
     name_gen = haikunator.Haikunator()
@@ -210,16 +221,12 @@ def create_proxies(user_option, region):
     if(user_option == 1):
         proxy_gen = awsproxygen.AWSProxyGen()
         cloud_provider = 'aws'
-        proxy_gen.change_region(region)
-        servers = proxy_gen.create_proxies(proxy_list_name, proxy_count, name_gen.haikunate(), name_gen.haikunate())
     elif(user_option == 2):
         proxy_gen = azureproxygen.AzureProxyGen()
         cloud_provider = 'azure'
-        servers = proxy_gen.create_proxies(proxy_count, region, 'proxystartupscript', False, name_gen.haikunate(), name_gen.haikunate())
     elif(user_option == 3):
         cloud_provider = '100tb'
         proxy_gen = proxygen100tb.ProxyGen100TB()
-        servers = proxy_gen.create_proxies(proxy_count, region, name_gen.haikunate(), name_gen.haikunate())
     elif(user_option == 4):
         # TODO
         cloud_provider = 'gcs'
@@ -227,15 +234,16 @@ def create_proxies(user_option, region):
     elif(user_option == 5):
         cloud_provider = 'upcloud'
         proxy_gen = upcloudproxygen.UpcloudProxyGen()
-        servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
     elif(user_option == 6):
         cloud_provider = 'linode'
         proxy_gen = linodeproxygen.LinodeProxygen()
-        servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
     elif(user_option == 7):
         cloud_provider = 'vultr'
         proxy_gen = vultrproxygen.VultrProxyGen()
-        servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
+    elif(user_option == 8):
+        cloud_provider = 'digitalocean'
+        proxy_gen = digitaloceanproxygen.DigitalOceanProxyGen()
+    servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
 
     print("Here are your generated proxies: ")
     for x in servers:
@@ -292,14 +300,13 @@ def main():
             for x in range(len(proxy_list_cost) - 1, -1, -1):
                 print(proxy_list_cost[x][0] + " - $" + str(round(proxy_list_cost[x][1], 5)))
     elif(menu_choice == 3):
-        base_input_message = "Which cloud provider would you like to choose? Input a number 1 - 5: "
-        invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 5: "
+        base_input_message = "Which cloud provider would you like to choose? Input a number 1 - 8: "
+        invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 8: "
         get_credentials(check_for_credentials())
         print_proxy_options()
-        user_option = get_user_input(1, 7, base_input_message, invalid_input_message)
+        user_option = get_user_input(1, 8, base_input_message, invalid_input_message)
         region = get_region_select(user_option)
         create_proxies(user_option, region)
-
-    
+ 
 if __name__ == "__main__":
     main()
