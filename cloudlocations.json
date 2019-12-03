@@ -130,5 +130,16 @@
         "tokyo": 25,
         "miami": 39,
         "singapore": 40
+    },
+    "digitalocean": {
+        "new york 1": "nyc1",
+        "new york 3": "nyc3",
+        "singapore": "sgp1",
+        "london": "lon1",
+        "amsterdam 3": "ams3",
+        "frankfurt": "fra1",
+        "toronto": "tor1",
+        "san francisco 2": "sfo2",
+        "bangalore": "blr1"
     }
 }
