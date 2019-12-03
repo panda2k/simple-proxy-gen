@@ -33,7 +33,6 @@ class VultrProxyGen:
         startup_script_file.close()
         startup_script = startup_script.replace(proxy_username_identifier, proxy_username)
         startup_script = startup_script.replace(proxy_password_identifier, proxy_password)
-        startup_script.encode('unicode_escape')
 
         startup_script_params = {
             'name': startup_script_name,
