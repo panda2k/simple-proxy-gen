@@ -4,6 +4,7 @@ import proxygen100tb
 import upcloudproxygen
 import googlecloudproxygen
 import linodeproxygen
+import vultrproxygen
 import proxymodels
 import os
 import haikunator
@@ -29,6 +30,7 @@ def print_proxy_options():
     print("4. Google Cloud")
     print("5. Upcloud")
     print("6. Linode")
+    print("7. Vultr")
 
 def print_proxy_list_options():
     print("1. Terminate proxies in list")
@@ -36,7 +38,7 @@ def print_proxy_list_options():
     print("3. View proxy list analytics")
 
 def get_region_select(user_option):
-    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud', 'linode']
+    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud', 'linode', 'vultr']
     cloud_provider = cloud_providers[user_option - 1]
     valid_input = False
     region_dict_file = open('cloudlocations.json', 'r')
@@ -55,7 +57,7 @@ def get_region_select(user_option):
     return region_dict[cloud_provider][region]
 
 def check_for_credentials():
-    credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services', 'Upcloud', 'Linode'], [True, True, True, True, True, True]]
+    credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services', 'Upcloud', 'Linode', 'Vultr'], [True, True, True, True, True, True, True]]
     if(os.environ.get('AZURE_CLIENT_ID') == None or os.environ.get('AZURE_CLIENT_SECRET') == None or os.environ.get('AZURE_TENANT_ID') == None or os.environ.get('AZURE_SUBSCRIPTION_ID') == None):
         credentials[1][0] = False
     if(os.environ.get('100TB_API_KEY') == None):
@@ -68,6 +70,8 @@ def check_for_credentials():
         credentials[1][4] = False
     if(os.environ.get('LINODE_ACCESS_TOKEN') == None):
         credentials[1][5] = False
+    if(os.environ.get('VULTR_ACCESS_TOKEN') == None):
+        credentials[1][6] = False
 
     return credentials
 
@@ -104,6 +108,9 @@ def get_credentials(credentials_list):
     if(credentials_list[1][5] == False):
         if(bool(input("You are missing Linode credentials. Would you like to set them now? True or False "))):
             os.environ['LINODE_ACCESS_TOKEN'] = input("Input your Linode API Access Token: ")
+    if(credentials_list[1][6] == False):
+        if(bool(input("You are missing your Vultr access key. Would you like to set it now? True or False "))):
+            os.environ['VULTR_ACCESS_TOKEN'] = input("Input your Vultr access key: ")
 
 def get_user_input(minimum_option, maximum_option, base_message, error_message):
     user_input = int(input(base_message))
@@ -188,6 +195,11 @@ def terminate_proxies(proxy_list_location):
         proxy_gen = linodeproxygen.LinodeProxygen()
         for x in proxy_list_dict['proxies']:
             proxy_gen.delete_server(x['server_id'])
+    elif(proxy_list_dict['cloud_provider'] == 'vultr'):
+        proxy_gen = vultrproxygen.VultrProxyGen()
+        for x in proxy_list_dict['proxies']:
+            proxy_gen.delete_server(x['server_id'])
+        proxy_gen.delete_script(proxy_list_dict['proxies'][0]['startup_script_id'])
 
 def create_proxies(user_option, region):
     name_gen = haikunator.Haikunator()
@@ -220,7 +232,11 @@ def create_proxies(user_option, region):
         cloud_provider = 'linode'
         proxy_gen = linodeproxygen.LinodeProxygen()
         servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
-    
+    elif(user_option == 7):
+        cloud_provider = 'vultr'
+        proxy_gen = vultrproxygen.VultrProxyGen()
+        servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
+
     print("Here are your generated proxies: ")
     for x in servers:
         proxy_list.append(x.to_dict())
@@ -229,7 +245,7 @@ def create_proxies(user_option, region):
     proxy_list_dict = {
         'cloud_provider': cloud_provider,
         'region': region,
-        'hourly_cost': len(proxy_list) * get_proxy_price(cloud_provider, region),
+        'hourly_cost': len(proxy_list) * get_proxy_price(cloud_provider, str(region)),
         'proxies': proxy_list
     }
     json.dump(proxy_list_dict, proxy_list_file)
@@ -263,7 +279,8 @@ def main():
                 for x in proxy_list:
                     print(x)
             elif(proxy_list_option_choice == 3):
-                print("work in progress")
+                print("ANALYTICS")
+                print("Hourly cost: $" + str(round(read_proxy_list(proxy_list_file_location)['hourly_cost'], 5)))
     elif(menu_choice == 2):
         proxy_list_cost = get_proxy_list_cost()
         print("ANALYTICS")
@@ -279,7 +296,7 @@ def main():
         invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 5: "
         get_credentials(check_for_credentials())
         print_proxy_options()
-        user_option = get_user_input(1, 6, base_input_message, invalid_input_message)
+        user_option = get_user_input(1, 7, base_input_message, invalid_input_message)
         region = get_region_select(user_option)
         create_proxies(user_option, region)
 
