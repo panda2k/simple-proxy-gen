@@ -112,5 +112,23 @@
         "california": "55f06b85-c9ee-11e3-9845-005056aa8af7",
         "amsterdam": "af876af7-f295-11e4-b45d-005056aadd24",
         "djibouti": "9e18689c-d12d-11e9-b4ba-005056aadd24"
+    },
+    "vultr": {
+        "new jersey": 1,
+        "chicago": 2,
+        "dallas": 3,
+        "seattle": 4,
+        "los angeles": 5,
+        "atlanta": 6,
+        "amsterdam": 7,
+        "london": 8,
+        "frankfurt": 9,
+        "silicon valley": 12,
+        "sydney": 19,
+        "toronto": 22,
+        "paris": 24,
+        "tokyo": 25,
+        "miami": 39,
+        "singapore": 40
     }
 }
