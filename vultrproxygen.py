@@ -68,7 +68,6 @@ class VultrProxyGen:
         servers = []
         server_ids = []
         script_id = self.create_startup_script('proxystartupscript', 'username', proxy_username, 'password', proxy_password, 'proxysetup-' + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
-        #script_id = 651517
         for x in range(proxy_count):
             server_ids.append(self.create_server(location_id, script_id))
         for x in server_ids:
