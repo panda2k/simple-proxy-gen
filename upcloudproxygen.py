@@ -68,7 +68,6 @@ class UpcloudProxyGen:
     
     def delete_server(self, server_uuid):
         delete_result = requests.delete(self.base_url + f'/server/{server_uuid}/?storages=1', auth=self.api_authentication)
-        print(delete_result.text)
 
     def create_proxies(self, zone, proxy_count, proxy_username, proxy_password):
         servers = []
