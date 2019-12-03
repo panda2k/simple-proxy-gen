@@ -50,7 +50,6 @@ class ProxyGen100TB:
             'billHourly': 'true'
         }
         creation_result = json.loads(requests.post(request_url, request_params).text)
-        print(creation_result)
 
         return proxymodels.Server100TB(location_id, creation_result['server'], vm_name, creation_result['ip'], 'root', password, proxy_username, proxy_password, 80)
     
@@ -65,10 +64,8 @@ class ProxyGen100TB:
         while(ready == False):
             for x in range(len(servers)):
                 if(self.get_vm_status(servers[x].server_id) != 2):
-                    print('server not ready')
                     break
                 if(x == len(servers) - 1):
-                    print('servers ready')
                     ready = True
             if(ready == False):
                 time.sleep(10)
