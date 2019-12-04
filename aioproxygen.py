@@ -6,6 +6,7 @@ import googlecloudproxygen
 import linodeproxygen
 import vultrproxygen
 import digitaloceanproxygen
+import vpsieproxygen
 import proxymodels
 import os
 import haikunator
@@ -33,6 +34,7 @@ def print_proxy_options():
     print("6. Linode")
     print("7. Vultr")
     print("8. Digital Ocean")
+    print("9. VPSie")
 
 def print_proxy_list_options():
     print("1. Terminate proxies in list")
@@ -40,7 +42,7 @@ def print_proxy_list_options():
     print("3. View proxy list analytics")
 
 def get_region_select(user_option):
-    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud', 'linode', 'vultr', 'digitalocean']
+    cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud', 'linode', 'vultr', 'digitalocean', 'vpsie']
     cloud_provider = cloud_providers[user_option - 1]
     valid_input = False
     region_dict_file = open('cloudlocations.json', 'r')
@@ -59,7 +61,7 @@ def get_region_select(user_option):
     return region_dict[cloud_provider][region]
 
 def check_for_credentials():
-    credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services', 'Upcloud', 'Linode', 'Vultr', 'Digital Ocean'], [True, True, True, True, True, True, True, True]]
+    credentials = [['Azure', '100tb', 'Google Cloud Services', 'Amazon Web Services', 'Upcloud', 'Linode', 'Vultr', 'Digital Ocean', 'VPSie'], [True, True, True, True, True, True, True, True, True]]
     if(os.environ.get('AZURE_CLIENT_ID') == None or os.environ.get('AZURE_CLIENT_SECRET') == None or os.environ.get('AZURE_TENANT_ID') == None or os.environ.get('AZURE_SUBSCRIPTION_ID') == None):
         credentials[1][0] = False
     if(os.environ.get('100TB_API_KEY') == None):
@@ -76,25 +78,27 @@ def check_for_credentials():
         credentials[1][6] = False
     if(os.environ.get('DIGITAL_OCEAN_ACCESS_TOKEN') == None):
         credentials[1][7] = False
+    if(os.environ.get('VPSIE_CLIENT_ID') == None or os.environ.get('VPSIE_CLIENT_SECRET') == None):
+        credentials[1][8] = False
 
     return credentials
 
 def get_credentials(credentials_list):
     if(credentials_list[1][0] == False):
-        if(bool(input("You are missing Azure credentials. Would you like to set them now? True or False "))):
+        if(bool(input("You are missing Azure credentials. Would you like to set them now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
             os.environ['AZURE_CLIENT_ID'] = input("Input your Azure Client ID: ")
             os.environ['AZURE_CLIENT_SECRET'] = input("Input your Azure Client Secret: ")
             os.environ['AZURE_TENANT_ID'] = input("Input your Azure Tenant ID: ")
             os.environ['AZURE_SUBSCRIPTION_ID'] = input("Input your Azure Subscription ID: ")
             print("Now finished collecting Azure credentials")
     if(credentials_list[1][1] == False):
-        if(bool(input("You are missing 100tb credentials. Would you like to set them now? True or False "))):
+        if(bool(input("You are missing 100tb credentials. Would you like to set them now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
             os.environ['100TB_API_KEY'] = input("Input your 100tb API key: ")
     if(credentials_list[1][2] == False):
-        if(bool(input("You are missing Google Cloud credentials. Would you like to set them now? True or False "))):
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = input("Input the direct file location to your Google Cloud credentials file. Use / instead of \\ in the file path. ")
+        if(bool(input("You are missing Google Cloud credentials. Would you like to set them now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = input("Input the direct file location to your Google Cloud credentials file. Use \\ instead of / in the file path. ")
     if(credentials_list[1][3] == False):
-        if(bool(input("You are missing Amazon Web Services credentials. Would you like to set them now? True or False "))):
+        if(bool(input("You are missing Amazon Web Services credentials. Would you like to set them now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
             aws_access_key = input("Input your AWS Access Key ID: ")
             aws_secret_accesss_key = input("Input your Secret AWS Access Key")
             aws_folder_directory = os.path.expanduser('~') + "\\.aws"
@@ -106,18 +110,22 @@ def get_credentials(credentials_list):
             config_file.write("[default]\nregion = us-east-1\noutput = json")
             config_file.close()
     if(credentials_list[1][4] == False):
-        if(bool(input("You are missing Upcloud API credentials. Would you like to set them now? True or False "))):
+        if(bool(input("You are missing Upcloud API credentials. Would you like to set them now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
             os.environ['UPCLOUD_API_USERNAME'] = input("Input your Upcloud API Username: ")
             os.environ['UPCLOUD_API_PASSWORD'] = input("Input your upcloud API Password: ")
     if(credentials_list[1][5] == False):
-        if(bool(input("You are missing Linode credentials. Would you like to set them now? True or False "))):
+        if(bool(input("You are missing Linode credentials. Would you like to set them now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
             os.environ['LINODE_ACCESS_TOKEN'] = input("Input your Linode API Access Token: ")
     if(credentials_list[1][6] == False):
-        if(bool(input("You are missing your Vultr access key. Would you like to set it now? True or False "))):
+        if(bool(input("You are missing your Vultr access key. Would you like to set it now?Hit enter if you don't want to, enter anything if you want to set it now. "))):
             os.environ['VULTR_ACCESS_TOKEN'] = input("Input your Vultr access key: ")
     if(credentials_list[1][7] == False):
-        if(bool(input("You are missing your Digital Ocean access token. Would you like to set it now? True or False"))):
+        if(bool(input("You are missing your Digital Ocean access token. Would you like to set it now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
             os.environ['DIGITAL_OCEAN_ACCESS_TOKEN'] = input("Input your Digital Ocean access token")
+    if(credentials_list[1][8] == False):
+        if(bool(input("You are missing your VPSie credentials. Would you like to set it now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
+            os.environ['VPSIE_CLIENT_ID'] = input("Input your VPSie client ID")
+            os.environ['VPSIE_CLIENT_SECRET'] = input("Input you VPSie client secret")
 
 def get_user_input(minimum_option, maximum_option, base_message, error_message):
     user_input = int(input(base_message))
@@ -211,6 +219,10 @@ def terminate_proxies(proxy_list_location):
         proxy_gen = digitaloceanproxygen.DigitalOceanProxyGen()
         for x in proxy_list_dict['proxies']:
             proxy_gen.delete_vm(x['server_id'])
+    elif(proxy_list_dict['cloud_provider'] == 'vpsie'):
+        proxy_gen = vpsieproxygen.VpsieProxyGen()
+        for x in proxy_list_dict['proxies']:
+            proxy_gen.delete_server(x['server_id'])
 
 def create_proxies(user_option, region):
     name_gen = haikunator.Haikunator()
@@ -243,6 +255,9 @@ def create_proxies(user_option, region):
     elif(user_option == 8):
         cloud_provider = 'digitalocean'
         proxy_gen = digitaloceanproxygen.DigitalOceanProxyGen()
+    elif(user_option == 9):
+        cloud_provider = 'vpsie'
+        proxy_gen = vpsieproxygen.VpsieProxyGen()
     servers = proxy_gen.create_proxies(region, proxy_count, name_gen.haikunate(), name_gen.haikunate())
 
     print("Here are your generated proxies: ")
@@ -300,11 +315,11 @@ def main():
             for x in range(len(proxy_list_cost) - 1, -1, -1):
                 print(proxy_list_cost[x][0] + " - $" + str(round(proxy_list_cost[x][1], 5)))
     elif(menu_choice == 3):
-        base_input_message = "Which cloud provider would you like to choose? Input a number 1 - 8: "
-        invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 8: "
+        base_input_message = "Which cloud provider would you like to choose? Input a number 1 - 9: "
+        invalid_input_message = "Invalid input. Which cloud provider would you like to choose? Input a number 1 - 9: "
         get_credentials(check_for_credentials())
         print_proxy_options()
-        user_option = get_user_input(1, 8, base_input_message, invalid_input_message)
+        user_option = get_user_input(1, 9, base_input_message, invalid_input_message)
         region = get_region_select(user_option)
         create_proxies(user_option, region)
  
