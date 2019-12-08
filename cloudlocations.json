@@ -141,5 +141,27 @@
         "toronto": "tor1",
         "san francisco 2": "sfo2",
         "bangalore": "blr1"
+    },
+    "gcs": {
+        "oregon": "us-west1-a",
+        "los angeles": "us-west2-a",
+        "north virginia": "us-east4-a",
+        "south carolina": "us-east1-b",
+        "iowa": "us-central1-a",
+        "montreal": "northamerica-northeast1-a",
+        "sao paulo": "southamerica-east1-a",
+        "london": "europe-west2-a",
+        "belgium": "europe-west1-b",
+        "netherlands": "europe-west4-a",
+        "zurich": "europe-west6-a",
+        "frankfurt": "europe-west3-a",
+        "finland": "europe-north1-a",
+        "mumbai": "asia-south1-a",
+        "singapore": "asia-southeast1-a",
+        "hong kong": "asia-east2-a",
+        "taiwan": "asia-east1-a",
+        "tokyo": "asia-northeast1-a",
+        "osaka": "asia-northeast2-a",
+        "sydney": "australia-southeast1-a"
     }
 }
