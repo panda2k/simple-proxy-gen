@@ -1,5 +1,3 @@
-import json
-
 class AWSProxy:
     ip_address = None
     username = None
@@ -239,6 +237,33 @@ class DigitalOceanServer:
     def to_dict(self):
         server = {
             'server_id': self.server_id,
+            'ip_address': self.ip_address,
+            'proxy_username': self.proxy_username,
+            'proxy_password': self.proxy_password,
+            'proxy_port': self.proxy_port
+        }
+        return server
+    
+    def to_string(self):
+        return self.ip_address + ':' + str(self.proxy_port) + ':' + self.proxy_username + ':' + self.proxy_password
+
+class GoogleCloudServer:
+    server_name = None
+    ip_address = None
+    proxy_username = None
+    proxy_password = None
+    proxy_port = None
+
+    def __init__(self, server_name, ip_address, proxy_username, proxy_password, proxy_port):
+        self.server_name = server_name
+        self.ip_address = ip_address
+        self.proxy_username = proxy_username
+        self.proxy_password = proxy_password
+        self.proxy_port = proxy_port
+    
+    def to_dict(self):
+        server = {
+            'server_name': self.server_name,
             'ip_address': self.ip_address,
             'proxy_username': self.proxy_username,
             'proxy_password': self.proxy_password,
