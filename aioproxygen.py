@@ -66,7 +66,7 @@ def check_for_credentials():
         credentials[1][0] = False
     if(os.environ.get('100TB_API_KEY') == None):
         credentials[1][1] = False
-    if(os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') == None):
+    if(os.environ.get('GOOGLE_APPLICATION_CREDENTIALS') == None or os.environ.get('GOOGLE_CLOUD_PROJECT') == None):
         credentials[1][2] = False
     if(os.path.exists(os.path.expanduser('~') + "\\.aws") == False):
         credentials[1][3] = False
@@ -97,6 +97,7 @@ def get_credentials(credentials_list):
     if(credentials_list[1][2] == False):
         if(bool(input("You are missing Google Cloud credentials. Would you like to set them now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
             os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = input("Input the direct file location to your Google Cloud credentials file. Use \\ instead of / in the file path. ")
+            os.environ['GOOGLE_CLOUD_PROJECT'] = input("Input the Google Cloud project you want the proxies to be generated in: ")
     if(credentials_list[1][3] == False):
         if(bool(input("You are missing Amazon Web Services credentials. Would you like to set them now? Hit enter if you don't want to, enter anything if you want to set it now. "))):
             aws_access_key = input("Input your AWS Access Key ID: ")
@@ -223,6 +224,10 @@ def terminate_proxies(proxy_list_location):
         proxy_gen = vpsieproxygen.VpsieProxyGen()
         for x in proxy_list_dict['proxies']:
             proxy_gen.delete_server(x['server_id'])
+    elif(proxy_list_dict['cloud_provider'] == 'gcs'):
+        proxy_gen = googlecloudproxygen.GoogleCloudProxyGen()
+        for x in proxy_list_dict['proxies']:
+            proxy_gen.delete_vm(os.environ.get('GOOGLE_CLOUD_PROJECT'), x['zone'], x['server_name'])
 
 def create_proxies(user_option, region):
     name_gen = haikunator.Haikunator()
@@ -240,7 +245,6 @@ def create_proxies(user_option, region):
         cloud_provider = '100tb'
         proxy_gen = proxygen100tb.ProxyGen100TB()
     elif(user_option == 4):
-        # TODO
         cloud_provider = 'gcs'
         proxy_gen = googlecloudproxygen.GoogleCloudProxyGen()
     elif(user_option == 5):
