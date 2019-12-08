@@ -249,12 +249,16 @@ class DigitalOceanServer:
 
 class GoogleCloudServer:
     server_name = None
+    zone = None
+    project = None
     ip_address = None
     proxy_username = None
     proxy_password = None
     proxy_port = None
 
-    def __init__(self, server_name, ip_address, proxy_username, proxy_password, proxy_port):
+    def __init__(self, project, zone, server_name, ip_address, proxy_username, proxy_password, proxy_port):
+        self.project = project
+        self.zone = zone
         self.server_name = server_name
         self.ip_address = ip_address
         self.proxy_username = proxy_username
@@ -263,6 +267,8 @@ class GoogleCloudServer:
     
     def to_dict(self):
         server = {
+            'project': self.project,
+            'zone': self.zone,
             'server_name': self.server_name,
             'ip_address': self.ip_address,
             'proxy_username': self.proxy_username,
