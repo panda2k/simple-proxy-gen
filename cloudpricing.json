@@ -141,5 +141,27 @@
         "tor1": 0.007,
         "sfo2": 0.007,
         "blr1": 0.007
+    },
+    "gcs": {
+        "us-west1-a": 0.04805,
+        "us-west2-a": 0.05776,
+        "us-east4-a": 0.05411,
+        "us-east1-b": 0.04805,
+        "us-central1-a": 0.04805,
+        "northamerica-northeast1-a": 0.05291,
+        "southamerica-east1-a": 0.07623,
+        "europe-west2-a": 0.06186,
+        "europe-west1-b": 0.05285,
+        "europe-west4-a": 0.05291,
+        "europe-west6-a": 0.06722,
+        "europe-west3-a": 0.06186,
+        "europe-north1-a": 0.05291,
+        "asia-south1-a": 0.05772,
+        "asia-southeast1-a": 0.05921,
+        "asia-east2-a": 0.06719,
+        "asia-east1-a": 0.05555,
+        "asia-northeast1-a": 0.06172,
+        "asia-northeast2-a": 0.06172,
+        "australia-southeast1-a": 0.06815
     }
 }
