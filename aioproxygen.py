@@ -227,7 +227,7 @@ def terminate_proxies(proxy_list_location):
     elif(proxy_list_dict['cloud_provider'] == 'gcs'):
         proxy_gen = googlecloudproxygen.GoogleCloudProxyGen()
         for x in proxy_list_dict['proxies']:
-            proxy_gen.delete_vm(os.environ.get('GOOGLE_CLOUD_PROJECT'), x['zone'], x['server_name'])
+            proxy_gen.delete_vm(x['zone'], x['server_name'])
 
 def create_proxies(user_option, region):
     name_gen = haikunator.Haikunator()
