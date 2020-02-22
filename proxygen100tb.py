@@ -24,6 +24,7 @@ class ProxyGen100TB:
             sudo_config = Config(overrides={'sudo': {'password': x.password}})
             server_connection = Connection(host=x.ip_address, user=x.username, connect_kwargs={"password": x.password}, config=sudo_config)
             server_connection.sudo('apt-get install dos2unix')
+            time.sleep(1)
             file_transfer_result = server_connection.put(startup_script_file_location, remote='/usr/bin/')
             server_connection.sudo('chmod +x /usr/bin/' + startup_script_file_location)
             server_connection.sudo('dos2unix /usr/bin/' + startup_script_file_location)
