@@ -223,12 +223,11 @@ class AWSProxyGen:
 
 def main():
     proxy_gen = AWSProxyGen()
-    #proxy_gen.change_region('us-east-1')
-    #proxy_count = int(input("How many proxies would you like to create: "))
-    #proxy_list_name = input("What do you want to name this proxy list: ")
-    #proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, 'testing', 'passtest')
-    #print(proxies)
-    print(proxy_gen.get_image_id())
+    proxy_gen.change_region('us-east-1')
+    proxy_count = int(input("How many proxies would you like to create: "))
+    proxy_list_name = input("What do you want to name this proxy list: ")
+    proxies = proxy_gen.create_proxies(proxy_list_name, proxy_count, 'testing', 'passtest')
+    print(proxies)
 
 if __name__ == "__main__":
     main()
