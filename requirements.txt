@@ -111,7 +111,7 @@ google-auth==1.8.0
 google-auth-httplib2==0.0.3
 greenlet==0.4.15
 haikunator==2.1.0
-httplib2==0.14.0
+httplib2==0.18.0
 hyperlink==18.0.0
 idna==2.8
 incremental==17.5.0
