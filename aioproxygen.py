@@ -46,7 +46,7 @@ def get_region_select(user_option):
     cloud_providers = ['aws', 'azure', '100tb', 'gcs', 'upcloud', 'linode', 'vultr', 'digitalocean', 'vpsie']
     cloud_provider = cloud_providers[user_option - 1]
     valid_input = False
-    region_dict_file = open('cloudlocations.json', 'r')
+    region_dict_file = open('./proxy_gen_lib/cloudlocations.json', 'r')
     region_dict = json.load(region_dict_file)
     region_dict_file.close()
     print('Locations:')
@@ -159,7 +159,7 @@ def get_proxy_lists():
     return proxy_lists
 
 def get_proxy_price(provider, location_id):
-    proxy_price_file = open('cloudpricing.json', 'r')
+    proxy_price_file = open('./proxy_gen_lib/cloudpricing.json', 'r')
     proxy_prices = json.load(proxy_price_file)
     proxy_price_file.close()
 
