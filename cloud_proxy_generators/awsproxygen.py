@@ -5,9 +5,11 @@ import time
 import pytz
 import datetime
 import base64
-import proxymodels
 import os
 from botocore.exceptions import ClientError
+
+from . import proxymodels
+
 
 class AWSProxyGen:
     ec2_client = None

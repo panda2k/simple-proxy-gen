@@ -1,12 +1,14 @@
 import json
 import requests
 import os
-import proxymodels
 import haikunator
 from fabric import Connection
 from fabric import Config
 from invoke.exceptions import UnexpectedExit
 import time
+
+from . import proxymodels
+
 
 class VpsieProxyGen:
     client_id = None

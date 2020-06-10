@@ -2,7 +2,8 @@ import googleapiclient.discovery
 import haikunator
 import os
 import time
-import proxymodels
+
+from . import proxymodels
 
 class GoogleCloudProxyGen:
     compute_client = None

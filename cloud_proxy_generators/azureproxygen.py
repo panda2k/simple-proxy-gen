@@ -8,8 +8,8 @@ from azure.mgmt.network import NetworkManagementClient
 from azure.mgmt.compute import ComputeManagementClient
 from msrestazure.azure_exceptions import CloudError
 from haikunator import Haikunator
-import proxytester
-import proxymodels
+from utils import proxytester
+from . import proxymodels
 
 class AzureProxyGen:
     compute_client = None

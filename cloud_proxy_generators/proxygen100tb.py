@@ -6,8 +6,7 @@ import haikunator
 from fabric import Connection
 from fabric import Config
 from invoke.exceptions import UnexpectedExit
-import proxymodels
-
+from . import proxymodels
 
 class ProxyGen100TB:
     api_key = None

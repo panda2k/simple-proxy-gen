@@ -2,8 +2,10 @@ import os
 import requests
 import json
 import haikunator
-import proxymodels
 from datetime import datetime
+
+from . import proxymodels
+
 
 class LinodeProxygen():
     access_token = None

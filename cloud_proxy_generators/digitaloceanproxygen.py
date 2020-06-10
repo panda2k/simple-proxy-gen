@@ -3,7 +3,8 @@ import json
 import os
 import haikunator
 import time
-import proxymodels
+
+from . import proxymodels
 
 class DigitalOceanProxyGen:
     access_key = None

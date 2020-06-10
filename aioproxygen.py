@@ -1,13 +1,14 @@
-import awsproxygen
-import azureproxygen
-import proxygen100tb
-import upcloudproxygen
-import googlecloudproxygen
-import linodeproxygen
-import vultrproxygen
-import digitaloceanproxygen
-import vpsieproxygen
-import proxymodels
+from cloud_proxy_generators import awsproxygen
+from cloud_proxy_generators import azureproxygen
+from cloud_proxy_generators import proxygen100tb
+from cloud_proxy_generators import upcloudproxygen
+from cloud_proxy_generators import googlecloudproxygen
+from cloud_proxy_generators import linodeproxygen
+from cloud_proxy_generators import vultrproxygen
+from cloud_proxy_generators import digitaloceanproxygen
+from cloud_proxy_generators import vpsieproxygen
+from cloud_proxy_generators import proxymodels
+
 import os
 import haikunator
 import json

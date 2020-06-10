@@ -1,10 +1,12 @@
 import os
 import requests
 import json
-import proxymodels
 import time
 from requests.auth import HTTPBasicAuth
 import haikunator
+
+from . import proxymodels
+
 
 class UpcloudProxyGen:
     api_authentication = None

@@ -3,7 +3,8 @@ import base64
 import requests
 import time
 import json
-import proxymodels
+
+from . import proxymodels
 
 class VultrProxyGen:
     access_token = None
