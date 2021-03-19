@@ -100,7 +100,7 @@ cssselect==1.0.3
 cycler==0.10.0
 Django==2.2.6
 django-db==0.0.7
-djangorestframework==3.11.0
+djangorestframework==3.11.2
 docutils==0.14
 fabric==2.5.0
 Flask==1.1.1
