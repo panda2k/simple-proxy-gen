@@ -152,7 +152,7 @@ pyzmq==18.1.1
 range==1.0.0
 requests==2.22.0
 requests-oauthlib==1.2.0
-rsa==4.0
+rsa==4.1
 s3transfer==0.2.1
 selenium==3.141.0
 service-identity==18.1.0
